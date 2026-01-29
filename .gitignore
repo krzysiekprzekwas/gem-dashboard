@@ -1,0 +1,18 @@
+# Python / Backend
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+.DS_Store
+*.db
+backend/gem_database.db
+
+# Frontend
+node_modules/
+.next/
+out/
+build/
+dist/
+.vercel
+*.log
