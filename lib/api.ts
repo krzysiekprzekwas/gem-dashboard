@@ -22,7 +22,10 @@ export interface HistoryRecord {
     signal: string;
 }
 
-const API_BASE = 'http://localhost:8000/api';
+// In Vercel (Production), use relative path to route via rewrites.
+// In Development, use localhost:8000 IF running separate backend, 
+// OR use relative if using Next.js rewrites in next.config.ts (preferred).
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 export async function fetchMomentumData(): Promise<MomentumData> {
     const res = await fetch(`${API_BASE}/momentum`, { cache: 'no-store' });
