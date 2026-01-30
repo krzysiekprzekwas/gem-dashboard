@@ -1,58 +1,36 @@
-# 💎 GEM Dashboard (Global Equity Momentum)
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-[![Status](https://img.shields.io/badge/Status-Live-success)]()
-[![Stack](https://img.shields.io/badge/Stack-FastAPI%20%7C%20Next.js%20%7C%20Tailwind-blue)]()
+## Getting Started
 
-A "Bloomberg-lite" dashboard for tracking **Global Equity Momentum (GEM)**. This application monitors the 12-month momentum of US Stocks (SPY), Global ex-US Stocks (VEU), and Aggregate Bonds (BND) to generate clear, actionable asset allocation signals.
+First, run the development server:
 
-![GEM Dashboard Preview](https://github.com/user-attachments/assets/PLACEHOLDER_IMAGE)
-
-## 🚀 Features
-
-- **Live Signal Generation**: Real-time calculation of GEM signals based on 12-month adjusted close momentum.
-- **Historical Tracking**: automated daily tacking of momentum scores and signal changes.
-- **Allocation Analysis**: Visualizes signal shifts, current trend duration, and historical effectiveness.
-- **Robust Backend**: FastAPI service with background scheduling and SQLite persistence.
-- **Modern Frontend**: Responsive Next.js dashboard with Shadcn/UI and Recharts.
-
-## 🛠 Tech Stack
-
-- **Backend**: Python, FastAPI, yfinance, Pandas, SQLite
-- **Frontend**: TypeScript, Next.js (App Router), Tailwind CSS, Shadcn/UI, Recharts
-- **DevOps**: standard `pip` and `npm` workflows
-
-## ⚡️ Quick Start
-
-### Prerequisites
-- Python 3.9+
-- Node.js 18+
-
-### 1. Backend Setup
 ```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # or venv\Scripts\activate on Windows
-pip install -r requirements.txt
-python main.py
-```
-*The API will be available at `http://localhost:8000`*
-
-### 2. Frontend Setup
-```bash
-cd frontend
-npm install
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
-*The Dashboard will be available at `http://localhost:3000`*
 
-## 📈 How It Works
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-The **Global Equity Momentum** strategy is a rule-based trend-following model:
-1. **Compare**: Calculate 12-month return for SPY and VEU.
-2. **Filter**: If the best asset's return is positive (> bill rate), allocate to that asset.
-3. **Safety**: If both equities are negative, move to defensive Bonds (BND).
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This dashboard automates this logic, providing a persistent "Check Engine Light" for your portfolio.
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## 📄 License
-MIT
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

@@ -1,0 +1,9 @@
+# Ignore local dev files to prevent upload bloat
+venv
+backend/venv
+node_modules
+.git
+.DS_Store
+*.pyc
+__pycache__
+tests
