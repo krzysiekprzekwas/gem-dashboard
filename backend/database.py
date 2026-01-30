@@ -16,7 +16,8 @@ class MomentumHistory(SQLModel, table=True):
 import os
 
 # Setup Database
-sqlite_file_name = "database.db"
+base_dir = os.path.dirname(os.path.abspath(__file__))
+sqlite_file_name = os.path.join(base_dir, "database.db")
 sqlite_url = f"sqlite:///{sqlite_file_name}"
 
 # Check for DATABASE_URL environment variable (from Vercel/Cloud)
@@ -53,7 +54,7 @@ def save_momentum_record(spy: float, veu: float, bnd: float, signal: str, tbill:
         print(f"Saved record: {record}")
         return record
 
-def get_history(region: str = "US", limit: int = 180):
+def get_history(region: str = "US", limit: int = 1000):
     """Fetches the last N records for a specific region."""
     with Session(engine) as session:
         statement = select(MomentumHistory)\

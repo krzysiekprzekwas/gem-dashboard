@@ -30,7 +30,7 @@ def fetch_ticker_data(ticker):
     }
     
     # query2 is often more reliable
-    url = f"https://query2.finance.yahoo.com/v8/finance/chart/{ticker}?interval=1d&range=2y"
+    url = f"https://query2.finance.yahoo.com/v8/finance/chart/{ticker}?interval=1d&range=5y"
     
     try:
         resp = requests.get(url, headers=headers, timeout=10)

@@ -7,9 +7,8 @@ import { useTheme } from "next-themes";
 
 export function HistoryChart({ data, labels }: { data: HistoryRecord[], labels: any }) {
     const { theme } = useTheme();
-    // Reverse and limit to ~6 months (180 days)
+    // Data is already filtered by parent; reverse for chronological X axis
     const chartData = [...data]
-        .slice(0, 180) // Last 180 records (roughly 6 months)
         .reverse()
         .map(d => ({
             ...d,

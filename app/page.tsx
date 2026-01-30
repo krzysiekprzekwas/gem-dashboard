@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { fetchMomentumData, fetchHistory, MomentumData, HistoryRecord } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -29,6 +29,7 @@ export default function Home() {
 
   const [region, setRegion] = useState<string>("US");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [historyRange, setHistoryRange] = useState<"3m" | "1y" | "max">("1y");
 
   useEffect(() => {
     const savedRegion = localStorage.getItem("gem-region");
@@ -86,6 +87,18 @@ export default function Home() {
   };
 
   const labels = regionLabels[region] || regionLabels.US;
+
+  const filteredHistory = useMemo(() => {
+    if (history.length === 0) return [];
+    const maxDate = new Date(Math.max(...history.map((r) => new Date(r.date).getTime())));
+    const cutoff3m = new Date(maxDate);
+    cutoff3m.setDate(cutoff3m.getDate() - 90);
+    const cutoff1y = new Date(maxDate);
+    cutoff1y.setDate(cutoff1y.getDate() - 365);
+    if (historyRange === "3m") return history.filter((r) => new Date(r.date) >= cutoff3m);
+    if (historyRange === "1y") return history.filter((r) => new Date(r.date) >= cutoff1y);
+    return history;
+  }, [history, historyRange]);
 
   const formatPercent = (val: number) => (val * 100).toFixed(2) + "%";
   const formatPrice = (val: number) => "$" + val.toFixed(2);
@@ -403,30 +416,52 @@ export default function Home() {
 
             <Card className="bg-card border-border">
               <CardHeader>
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div>
-                    <CardTitle className="text-muted-foreground text-sm uppercase tracking-wider">Signal History & Details</CardTitle>
-                    <CardDescription className="text-muted-foreground text-xs md:text-sm">
-                      6-month evolution and detailed historical records
-                    </CardDescription>
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                      <CardTitle className="text-muted-foreground text-sm uppercase tracking-wider">Signal History & Details</CardTitle>
+                      <CardDescription className="text-muted-foreground text-xs md:text-sm">
+                        Chart and table show the same date range
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex rounded-lg border border-border p-0.5 bg-muted/30" role="tablist" aria-label="Date range">
+                        {(["3m", "1y", "max"] as const).map((range) => (
+                          <button
+                            key={range}
+                            type="button"
+                            role="tab"
+                            aria-selected={historyRange === range}
+                            onClick={() => setHistoryRange(range)}
+                            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                              historyRange === range
+                                ? "bg-background text-foreground shadow-sm"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {range === "3m" ? "3 months" : range === "1y" ? "1 year" : "Max"}
+                          </button>
+                        ))}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setHistoryOpen(!historyOpen)}
+                        className="text-xs shrink-0"
+                      >
+                        {historyOpen ? "Hide Table" : "Show Table"}
+                      </Button>
+                    </div>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setHistoryOpen(!historyOpen)}
-                    className="w-full md:w-auto text-xs"
-                  >
-                    {historyOpen ? "Hide Detailed Data" : "Show Detailed Data"}
-                  </Button>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                <HistoryChart data={history} labels={labels} />
+                <HistoryChart data={filteredHistory} labels={labels} />
 
                 <Collapsible open={historyOpen} onOpenChange={setHistoryOpen}>
                   <CollapsibleContent className="pt-4 border-t border-border">
                     <div className="overflow-x-auto">
-                      <HistoryTable data={history} labels={labels} />
+                      <HistoryTable data={filteredHistory} labels={labels} />
                     </div>
                   </CollapsibleContent>
                 </Collapsible>
