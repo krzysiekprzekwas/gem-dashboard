@@ -4,6 +4,7 @@ export interface MomentumData {
         SPY: number;
         VEU: number;
         BND: number;
+        TBILL: number;
     };
     prices: {
         SPY: number;

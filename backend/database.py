@@ -9,6 +9,7 @@ class MomentumHistory(SQLModel, table=True):
     spy_mom: float
     veu_mom: float
     bnd_mom: float
+    tbill_mom: Optional[float] = None
     signal: str
 
 import os
@@ -34,13 +35,14 @@ def get_session():
     with Session(engine) as session:
         yield session
 
-def save_momentum_record(spy: float, veu: float, bnd: float, signal: str):
+def save_momentum_record(spy: float, veu: float, bnd: float, signal: str, tbill: float = None):
     """Saves a momentum record to the database."""
     with Session(engine) as session:
         record = MomentumHistory(
             spy_mom=spy,
             veu_mom=veu,
             bnd_mom=bnd,
+            tbill_mom=tbill,
             signal=signal
         )
         session.add(record)

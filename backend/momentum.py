@@ -7,7 +7,8 @@ import os
 ASSETS = {
     "US": "SPY",
     "Global_ex_US": "VEU",
-    "Bond": "BND"
+    "Bond": "BND",
+    "TBill": "^IRX"
 }
 
 def fetch_ticker_data(ticker):
@@ -48,6 +49,7 @@ def fetch_ticker_data(ticker):
 def fetch_momentum_data():
     """
     Fetches historical data and calculates 12-month momentum (approx 252 trading days).
+    Uses T-Bill returns as the threshold for equity allocation.
     No Pandas/Numpy required.
     """
     results = {}
@@ -77,12 +79,14 @@ def fetch_momentum_data():
         else:
             results[ticker] = (current / past) - 1.0
 
-    # Determine Signal
+    # Get momentum values
     spy_mom = results.get('SPY', 0)
     veu_mom = results.get('VEU', 0)
+    tbill_mom = results.get('^IRX', 0)
     
+    # Determine Signal - use T-Bill as threshold instead of 0
     signal = "BND"
-    if spy_mom > 0 or veu_mom > 0:
+    if spy_mom > tbill_mom or veu_mom > tbill_mom:
         if spy_mom > veu_mom:
             signal = "SPY"
         else:
@@ -93,7 +97,8 @@ def fetch_momentum_data():
         "momentum": {
             "SPY": spy_mom,
             "VEU": veu_mom,
-            "BND": results.get("BND", 0)
+            "BND": results.get("BND", 0),
+            "TBILL": tbill_mom
         },
         "prices": {
              t: current_prices.get(t, 0) for t in ASSETS.values()

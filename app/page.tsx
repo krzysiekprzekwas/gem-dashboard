@@ -61,17 +61,18 @@ export default function Home() {
     const spyMom = momentum.SPY || 0;
     const veuMom = momentum.VEU || 0;
     const bndMom = momentum.BND || 0;
+    const tbillMom = momentum.TBILL || 0;
 
     if (signal === "SPY") {
-      return `US equity markets (${formatPercent(spyMom)}) show the strongest momentum, exceeding international stocks (${formatPercent(veuMom)}). The strategy allocates 100% to US stocks for maximum growth potential.`;
+      return `US equity markets (${formatPercent(spyMom)}) outperform both international stocks (${formatPercent(veuMom)}) and US Treasury Bills (${formatPercent(tbillMom)}). The strategy allocates 100% to US stocks for maximum growth potential.`;
     } else if (signal === "VEU") {
-      return `International equity markets (${formatPercent(veuMom)}) demonstrate superior momentum compared to US stocks (${formatPercent(spyMom)}). The strategy rotates to global ex-US equities for optimal returns.`;
+      return `International equity markets (${formatPercent(veuMom)}) demonstrate superior momentum compared to US stocks (${formatPercent(spyMom)}) and exceed the Treasury Bill threshold (${formatPercent(tbillMom)}). The strategy rotates to global ex-US equities for optimal returns.`;
     } else if (signal === "BND") {
-      if (spyMom < 0 && veuMom < 0) {
-        return `Both US (${formatPercent(spyMom)}) and international (${formatPercent(veuMom)}) equity markets show negative momentum. The strategy moves to bonds (${formatPercent(bndMom)}) for capital preservation during market downturns.`;
+      const tbillRef = `Treasury Bills (${formatPercent(tbillMom)})`;
+      if (spyMom < tbillMom && veuMom < tbillMom) {
+        return `Neither US stocks (${formatPercent(spyMom)}) nor international stocks (${formatPercent(veuMom)}) exceed the ${tbillRef} threshold. The strategy moves to bonds (${formatPercent(bndMom)}) for capital preservation.`;
       } else {
-        const bestEquity = spyMom > veuMom ? `US stocks (${formatPercent(spyMom)})` : `international stocks (${formatPercent(veuMom)})`;
-        return `While ${bestEquity} show positive momentum, they don't meet the threshold for equity allocation. The strategy defensively positions in bonds (${formatPercent(bndMom)}) to protect capital.`;
+        return `Equity momentum does not sufficiently exceed the risk-free rate. The strategy defensively positions in bonds (${formatPercent(bndMom)}) to protect capital.`;
       }
     }
     return "";
@@ -168,10 +169,10 @@ export default function Home() {
                 <div>
                   <h3 className="font-semibold text-foreground mb-2">How it Works</h3>
                   <ul className="list-disc list-inside text-muted-foreground space-y-1 leading-relaxed">
-                    <li>Calculate 12-month total return for SPY and VEU</li>
+                    <li>Calculate 12-month total return for SPY, VEU, and US T-Bills</li>
                     <li>Select the equity asset with higher momentum</li>
-                    <li>If selected momentum is positive (&gt;0%), allocate 100% to that equity</li>
-                    <li>If negative, move to bonds (BND) for capital preservation</li>
+                    <li>If selected equity exceeds T-Bill returns, allocate 100% to that equity</li>
+                    <li>Otherwise, move to bonds (BND) for capital preservation</li>
                     <li>Rebalance monthly based on updated momentum signals</li>
                   </ul>
                 </div>
@@ -254,7 +255,7 @@ export default function Home() {
           <Card className="col-span-2 border-border bg-card overflow-hidden">
             <CardHeader>
               <CardTitle className="text-muted-foreground text-sm uppercase tracking-wider">Momentum Analysis (12-Mo)</CardTitle>
-              <CardDescription className="text-muted-foreground">Assets ranked by 12-month return. Logic: Buy best of SPY/VEU if &gt; 0, else BND.</CardDescription>
+              <CardDescription className="text-muted-foreground">Assets ranked by 12-month return. Logic: Buy best of SPY/VEU if &gt; T-Bills, else BND.</CardDescription>
             </CardHeader>
             <CardContent className="overflow-x-auto">
               <Table className="min-w-[600px] md:min-w-0">
@@ -272,20 +273,43 @@ export default function Home() {
                       <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">Loading market data...</TableCell>
                     </TableRow>
                   ) : data ? (
-                    ["SPY", "VEU", "BND"].sort((a, b) => (data.momentum[b as keyof typeof data.momentum] || 0) - (data.momentum[a as keyof typeof data.momentum] || 0)).map((ticker) => (
-                      <TableRow key={ticker} className="border-border hover:bg-muted/50">
-                        <TableCell className="font-medium text-foreground">{ticker}</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {ticker === "SPY" ? "US Stocks" : ticker === "VEU" ? "Global ex-US" : "Total Bond Market"}
-                        </TableCell>
-                        <TableCell className={`text-right ${(data.momentum[ticker as keyof typeof data.momentum] || 0) > 0 ? "text-green-500" : "text-red-500"}`}>
-                          {formatPercent(data.momentum[ticker as keyof typeof data.momentum] || 0)}
-                        </TableCell>
-                        <TableCell className="text-right text-foreground">
-                          {formatPrice(data.prices[ticker as keyof typeof data.prices] || 0)}
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    ["SPY", "VEU", "BND", "TBILL"].sort((a, b) => {
+                      const aMom = a === "TBILL" ? (data.momentum.TBILL || 0) : (data.momentum[a as keyof typeof data.momentum] || 0);
+                      const bMom = b === "TBILL" ? (data.momentum.TBILL || 0) : (data.momentum[b as keyof typeof data.momentum] || 0);
+                      return bMom - aMom;
+                    }).map((ticker) => {
+                      const isCurrentSignal = ticker === data.signal;
+                      const momentum = ticker === "TBILL" ? (data.momentum.TBILL || 0) : (data.momentum[ticker as keyof typeof data.momentum] || 0);
+                      const price = ticker === "TBILL" ? null : (data.prices[ticker as keyof typeof data.prices] || 0);
+
+                      return (
+                        <TableRow
+                          key={ticker}
+                          className={`border-border hover:bg-muted/50 ${isCurrentSignal ? 'bg-accent/30' : ''}`}
+                        >
+                          <TableCell className="font-medium text-foreground">
+                            {ticker}
+                            {isCurrentSignal && (
+                              <span className="ml-2 text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded">
+                                SELECTED
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {ticker === "SPY" ? "US Stocks" :
+                              ticker === "VEU" ? "Global ex-US" :
+                                ticker === "BND" ? "Total Bond Market" :
+                                  "13-Week T-Bill"}
+                          </TableCell>
+                          <TableCell className={`text-right ${momentum > 0 ? "text-green-500" : "text-red-500"}`}>
+                            {formatPercent(momentum)}
+                          </TableCell>
+                          <TableCell className="text-right text-foreground">
+                            {price !== null ? formatPrice(price) : "—"}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   ) : null}
                 </TableBody>
               </Table>

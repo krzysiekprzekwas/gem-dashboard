@@ -25,6 +25,7 @@ def update_momentum_history():
             spy=data['momentum']['SPY'],
             veu=data['momentum']['VEU'],
             bnd=data['momentum']['BND'],
+            tbill=data['momentum']['TBILL'],
             signal=data['signal']
         )
         logger.info(f"Successfully saved momentum record: {record}")
