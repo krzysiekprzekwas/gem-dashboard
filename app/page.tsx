@@ -8,10 +8,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AllocationChanges } from "@/components/allocation-changes";
 import { HistoryTable } from "@/components/history-table";
 import { HistoryChart } from "@/components/history-chart";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { ChevronDown } from "lucide-react";
 
 export default function Home() {
   const [data, setData] = useState<MomentumData | null>(null);
@@ -19,6 +21,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [statusOpen, setStatusOpen] = useState(false);
+  const [strategyOpen, setStrategyOpen] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -129,82 +132,97 @@ export default function Home() {
           </div>
         </header>
 
-        {/* GEM STRATEGY INFO SECTION */}
-        <Card className="border-border bg-card/50">
-          <CardHeader>
-            <CardTitle className="text-foreground text-lg flex items-center gap-2">
-              📚 About the GEM Strategy
-            </CardTitle>
-            <CardDescription className="text-muted-foreground">
-              Understanding Global Equity Momentum investing
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm">
-            <div>
-              <h3 className="font-semibold text-foreground mb-2">What is GEM?</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Global Equity Momentum (GEM) is a systematic investment strategy that rotates between US stocks (SPY),
-                international stocks (VEU), and bonds (BND) based on 12-month momentum. The strategy selects the
-                best-performing equity asset if its momentum is positive; otherwise, it allocates to bonds for downside protection.
-              </p>
-            </div>
+        {/* GEM STRATEGY INFO SECTION - COLLAPSIBLE */}
+        <Collapsible open={strategyOpen} onOpenChange={setStrategyOpen}>
+          <Card className="border-border bg-card/50">
+            <CollapsibleTrigger className="w-full">
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="text-left">
+                    <CardTitle className="text-foreground text-lg flex items-center gap-2">
+                      📚 About the GEM Strategy
+                    </CardTitle>
+                    <CardDescription className="text-muted-foreground">
+                      Understanding Global Equity Momentum investing
+                    </CardDescription>
+                  </div>
+                  <ChevronDown
+                    className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${strategyOpen ? 'transform rotate-180' : ''
+                      }`}
+                  />
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
 
-            <div>
-              <h3 className="font-semibold text-foreground mb-2">How it Works</h3>
-              <ul className="list-disc list-inside text-muted-foreground space-y-1 leading-relaxed">
-                <li>Calculate 12-month total return for SPY and VEU</li>
-                <li>Select the equity asset with higher momentum</li>
-                <li>If selected momentum is positive (&gt;0%), allocate 100% to that equity</li>
-                <li>If negative, move to bonds (BND) for capital preservation</li>
-                <li>Rebalance monthly based on updated momentum signals</li>
-              </ul>
-            </div>
+            <CollapsibleContent>
+              <CardContent className="space-y-4 text-sm pt-0">
+                <div>
+                  <h3 className="font-semibold text-foreground mb-2">What is GEM?</h3>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Global Equity Momentum (GEM) is a systematic investment strategy that rotates between US stocks (SPY),
+                    international stocks (VEU), and bonds (BND) based on 12-month momentum. The strategy selects the
+                    best-performing equity asset if its momentum is positive; otherwise, it allocates to bonds for downside protection.
+                  </p>
+                </div>
 
-            <Separator className="bg-border" />
+                <div>
+                  <h3 className="font-semibold text-foreground mb-2">How it Works</h3>
+                  <ul className="list-disc list-inside text-muted-foreground space-y-1 leading-relaxed">
+                    <li>Calculate 12-month total return for SPY and VEU</li>
+                    <li>Select the equity asset with higher momentum</li>
+                    <li>If selected momentum is positive (&gt;0%), allocate 100% to that equity</li>
+                    <li>If negative, move to bonds (BND) for capital preservation</li>
+                    <li>Rebalance monthly based on updated momentum signals</li>
+                  </ul>
+                </div>
 
-            <div>
-              <h3 className="font-semibold text-foreground mb-2">External Resources</h3>
-              <div className="grid md:grid-cols-2 gap-2">
-                <a
-                  href="https://allocatesmartly.com/gem-global-equities-momentum/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-500 hover:text-blue-400 underline underline-offset-4 flex items-center gap-1"
-                >
-                  <span>AllocateSmartly: GEM Overview</span>
-                  <span className="text-xs">↗</span>
-                </a>
-                <a
-                  href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2435323"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-500 hover:text-blue-400 underline underline-offset-4 flex items-center gap-1"
-                >
-                  <span>Research Paper (Antonacci, 2014)</span>
-                  <span className="text-xs">↗</span>
-                </a>
-                <a
-                  href="https://www.etf.com/sections/index-investor-corner/swedroe-momentum-investing-works"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-500 hover:text-blue-400 underline underline-offset-4 flex items-center gap-1"
-                >
-                  <span>Why Momentum Works (ETF.com)</span>
-                  <span className="text-xs">↗</span>
-                </a>
-                <a
-                  href="https://www.optimizedportfolio.com/gem/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-500 hover:text-blue-400 underline underline-offset-4 flex items-center gap-1"
-                >
-                  <span>Backtest Results (Optimized Portfolio)</span>
-                  <span className="text-xs">↗</span>
-                </a>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                <Separator className="bg-border" />
+
+                <div>
+                  <h3 className="font-semibold text-foreground mb-2">External Resources</h3>
+                  <div className="grid md:grid-cols-2 gap-2">
+                    <a
+                      href="https://allocatesmartly.com/gem-global-equities-momentum/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:text-blue-400 underline underline-offset-4 flex items-center gap-1"
+                    >
+                      <span>AllocateSmartly: GEM Overview</span>
+                      <span className="text-xs">↗</span>
+                    </a>
+                    <a
+                      href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2435323"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:text-blue-400 underline underline-offset-4 flex items-center gap-1"
+                    >
+                      <span>Research Paper (Antonacci, 2014)</span>
+                      <span className="text-xs">↗</span>
+                    </a>
+                    <a
+                      href="https://www.etf.com/sections/index-investor-corner/swedroe-momentum-investing-works"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:text-blue-400 underline underline-offset-4 flex items-center gap-1"
+                    >
+                      <span>Why Momentum Works (ETF.com)</span>
+                      <span className="text-xs">↗</span>
+                    </a>
+                    <a
+                      href="https://www.optimizedportfolio.com/gem/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:text-blue-400 underline underline-offset-4 flex items-center gap-1"
+                    >
+                      <span>Backtest Results (Optimized Portfolio)</span>
+                      <span className="text-xs">↗</span>
+                    </a>
+                  </div>
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
 
         <main className="grid gap-6 md:grid-cols-2">
           {/* SIGNAL CARD - FULL WIDTH */}
