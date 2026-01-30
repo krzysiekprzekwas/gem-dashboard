@@ -20,6 +20,7 @@ export interface HistoryRecord {
     spy_mom: number;
     veu_mom: number;
     bnd_mom: number;
+    tbill_mom?: number;
     signal: string;
 }
 

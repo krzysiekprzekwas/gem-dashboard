@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { fetchMomentumData, fetchHistory, MomentumData, HistoryRecord } from "@/lib/api";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -22,6 +23,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [statusOpen, setStatusOpen] = useState(false);
   const [strategyOpen, setStrategyOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -322,10 +324,37 @@ export default function Home() {
 
             <AllocationChanges data={history} />
 
-            <div className="grid gap-6">
-              <HistoryChart data={history} />
-              <HistoryTable data={history} />
-            </div>
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-muted-foreground text-sm uppercase tracking-wider">Signal History & Details</CardTitle>
+                    <CardDescription className="text-muted-foreground text-xs md:text-sm">
+                      6-month evolution and detailed historical records
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setHistoryOpen(!historyOpen)}
+                    className="w-full md:w-auto text-xs"
+                  >
+                    {historyOpen ? "Hide Detailed Data" : "Show Detailed Data"}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <HistoryChart data={history} />
+
+                <Collapsible open={historyOpen} onOpenChange={setHistoryOpen}>
+                  <CollapsibleContent className="pt-4 border-t border-border">
+                    <div className="overflow-x-auto">
+                      <HistoryTable data={history} />
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              </CardContent>
+            </Card>
           </div>
 
         </main>
