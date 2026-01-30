@@ -11,11 +11,21 @@ class MomentumHistory(SQLModel, table=True):
     bnd_mom: float
     signal: str
 
+import os
+
 # Setup Database
 sqlite_file_name = "database.db"
 sqlite_url = f"sqlite:///{sqlite_file_name}"
 
-engine = create_engine(sqlite_url, echo=False)
+# Check for DATABASE_URL environment variable (from Vercel/Cloud)
+database_url = os.getenv("DATABASE_URL", sqlite_url)
+
+# If using Postgres, we may need to replace 'postgres://' with 'postgresql://' for SQLAlchemy 1.4+
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+connect_args = {"check_same_thread": False} if "sqlite" in database_url else {}
+engine = create_engine(database_url, echo=False, connect_args=connect_args)
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)

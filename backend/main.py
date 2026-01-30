@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Header
+import os
 from fastapi.middleware.cors import CORSMiddleware
 try:
     from .momentum import fetch_momentum_data
@@ -80,11 +81,23 @@ def read_history():
     """Fetch persistent history."""
     return get_history()
 
-@app.post("/api/trigger-update")
-def trigger_update(background_tasks: BackgroundTasks):
-    """Manually trigger an update (for testing or backfill)."""
+@app.get("/api/cron-update")
+def cron_update(background_tasks: BackgroundTasks, auth_header: str | None = Header(default=None, alias="Authorization")):
+    """
+    Triggered by Vercel Cron. 
+    Secured by Checking for a secret key if set in env.
+    """
+    cron_secret = os.getenv("CRON_SECRET")
+    if cron_secret and auth_header != f"Bearer {cron_secret}":
+         # On Vercel, Cron jobs are verified by Vercel signature generally, 
+         # but a simple secret header is good practice for manual triggers too.
+         # For simplicity, we'll allow standard requests if no secret is set (dev mode).
+         logger.warning("Unauthorized cron attempt")
+         raise HTTPException(status_code=401, detail="Unauthorized")
+
     background_tasks.add_task(update_momentum_history)
-    return {"message": "Update triggered in background"}
+    return {"message": "Update triggered", "status": "ok"}
+
 
 if __name__ == "__main__":
     import uvicorn
