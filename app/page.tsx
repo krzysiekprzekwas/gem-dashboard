@@ -296,6 +296,33 @@ export default function Home() {
           </div>
 
         </main>
+
+        {/* FOOTER */}
+        <footer className="border-t border-border pt-8 mt-12">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <span>Built by</span>
+              <a
+                href="https://kristof.pro"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-foreground font-semibold hover:text-blue-500 transition-colors"
+              >
+                Kristof.pro
+              </a>
+            </div>
+
+            <a
+              href="https://buymeacoffee.com/kristof.pro"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-lg transition-all hover:scale-105 shadow-md"
+            >
+              <span className="text-xl">☕</span>
+              <span>Buy me a coffee</span>
+            </a>
+          </div>
+        </footer>
       </div>
     </div>
 
