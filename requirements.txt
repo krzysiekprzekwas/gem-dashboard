@@ -3,4 +3,4 @@ uvicorn
 requests
 sqlmodel
 apscheduler
-# Removed: pandas, numpy, yfinance to fix Vercel 250MB size limit
+psycopg2-binary
