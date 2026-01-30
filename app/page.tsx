@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AllocationChanges } from "@/components/allocation-changes";
 import { HistoryTable } from "@/components/history-table";
 import { HistoryChart } from "@/components/history-chart";
@@ -17,6 +18,7 @@ export default function Home() {
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [statusOpen, setStatusOpen] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -60,9 +62,48 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-4 self-end md:self-auto">
             <ThemeToggle />
-            <Badge variant="outline" className="text-muted-foreground border-border">
-              {loading ? "CONNECTING..." : "LIVE"}
-            </Badge>
+
+            <Dialog open={statusOpen} onOpenChange={setStatusOpen}>
+              <Badge
+                variant="outline"
+                className="text-muted-foreground border-border cursor-pointer hover:bg-accent"
+                onClick={() => setStatusOpen(true)}
+              >
+                {loading ? "CONNECTING..." : "LIVE"}
+              </Badge>
+
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="text-foreground">System Status</DialogTitle>
+                  <DialogDescription className="text-muted-foreground">
+                    Real-time monitoring and data source information
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4 mt-4">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Last Updated</span>
+                    <span className="text-foreground font-mono">
+                      {data ? new Date(data.last_updated).toLocaleTimeString() : "--:--:--"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Data Source</span>
+                    <span className="text-foreground">Yahoo Finance</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Update Frequency</span>
+                    <span className="text-foreground">Every 60 seconds</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Connection Status</span>
+                    <span className={error ? "text-destructive" : "text-green-500"}>
+                      {error ? "Disconnected" : "Connected"}
+                    </span>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </header>
 
@@ -87,25 +128,6 @@ export default function Home() {
                   </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
-
-          {/* STATUS / INFO CARD */}
-          <Card className="col-span-2 md:col-span-1 border-border bg-card">
-            <CardHeader>
-              <CardTitle className="text-muted-foreground text-sm uppercase tracking-wider">System Status</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Last Updated</span>
-                <span className="text-foreground">
-                  {data ? new Date(data.last_updated).toLocaleTimeString() : "--:--:--"}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Data Source</span>
-                <span className="text-foreground text-right truncate pl-4">Yahoo Finance (Real-time*)</span>
-              </div>
             </CardContent>
           </Card>
 
