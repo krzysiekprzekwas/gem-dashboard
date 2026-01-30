@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-export function HistoryTable({ data }: { data: HistoryRecord[] }) {
+export function HistoryTable({ data, labels }: { data: HistoryRecord[], labels: any }) {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
@@ -23,10 +23,10 @@ export function HistoryTable({ data }: { data: HistoryRecord[] }) {
                     <TableRow className="border-border hover:bg-transparent text-xs">
                         <TableHead className="text-muted-foreground">Date</TableHead>
                         <TableHead className="text-muted-foreground">Signal</TableHead>
-                        <TableHead className="text-right text-muted-foreground">SPY</TableHead>
-                        <TableHead className="text-right text-muted-foreground">VEU</TableHead>
-                        <TableHead className="text-right text-muted-foreground">T-Bill</TableHead>
-                        <TableHead className="text-right text-muted-foreground">BND</TableHead>
+                        <TableHead className="text-right text-muted-foreground">{labels.eq1_tick}</TableHead>
+                        <TableHead className="text-right text-muted-foreground">{labels.eq2_tick}</TableHead>
+                        <TableHead className="text-right text-muted-foreground">{labels.threshold}</TableHead>
+                        <TableHead className="text-right text-muted-foreground">{labels.bond_tick}</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -35,8 +35,8 @@ export function HistoryTable({ data }: { data: HistoryRecord[] }) {
                             <TableCell className="text-foreground font-mono">
                                 {new Date(record.date).toLocaleDateString()}
                             </TableCell>
-                            <TableCell className={`font-bold ${record.signal === 'SPY' ? 'text-green-500' :
-                                record.signal === 'VEU' ? 'text-blue-500' : 'text-yellow-500'
+                            <TableCell className={`font-bold ${(record.signal === labels.eq1_tick || record.signal === 'SPY') ? 'text-green-500' :
+                                (record.signal === labels.eq2_tick || record.signal === 'VEU') ? 'text-blue-500' : 'text-yellow-500'
                                 }`}>
                                 {record.signal}
                             </TableCell>

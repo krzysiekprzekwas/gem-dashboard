@@ -14,7 +14,9 @@ import { AllocationChanges } from "@/components/allocation-changes";
 import { HistoryTable } from "@/components/history-table";
 import { HistoryChart } from "@/components/history-chart";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Settings, Globe } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 export default function Home() {
   const [data, setData] = useState<MomentumData | null>(null);
@@ -25,12 +27,20 @@ export default function Home() {
   const [strategyOpen, setStrategyOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
 
+  const [region, setRegion] = useState<string>("US");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  useEffect(() => {
+    const savedRegion = localStorage.getItem("gem-region");
+    if (savedRegion) setRegion(savedRegion);
+  }, []);
+
   useEffect(() => {
     async function loadData() {
       try {
         const [resMom, resHist] = await Promise.all([
-          fetchMomentumData(),
-          fetchHistory()
+          fetchMomentumData(region),
+          fetchHistory(region)
         ]);
         setData(resMom);
         setHistory(resHist);
@@ -46,35 +56,64 @@ export default function Home() {
     // Poll every 60 seconds
     const interval = setInterval(loadData, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [region]);
+
+  const handleRegionChange = (newRegion: string) => {
+    setRegion(newRegion);
+    localStorage.setItem("gem-region", newRegion);
+    setSettingsOpen(false);
+  };
+
+  const regionLabels: Record<string, any> = {
+    US: {
+      eq1: "US Stocks",
+      eq2: "Global ex-US",
+      bond: "Total Bonds",
+      threshold: "T-Bills",
+      eq1_tick: "SPY",
+      eq2_tick: "VEU",
+      bond_tick: "BND",
+    },
+    EU: {
+      eq1: "S&P 500",
+      eq2: "World ex-US",
+      bond: "Global Bonds",
+      threshold: "Euro Cash",
+      eq1_tick: "CSPX.AS",
+      eq2_tick: "EXUS.L",
+      bond_tick: "AGGH.AS",
+    }
+  };
+
+  const labels = regionLabels[region] || regionLabels.US;
 
   const formatPercent = (val: number) => (val * 100).toFixed(2) + "%";
   const formatPrice = (val: number) => "$" + val.toFixed(2);
 
   const getSignalColor = (signal: string) => {
-    if (signal === "SPY") return "bg-green-600 hover:bg-green-700";
-    if (signal === "VEU") return "bg-blue-600 hover:bg-blue-700";
-    return "bg-yellow-600 hover:bg-yellow-700"; // BND
+    if (signal === labels.eq1_tick) return "bg-green-600 hover:bg-green-700";
+    if (signal === labels.eq2_tick) return "bg-blue-600 hover:bg-blue-700";
+    return "bg-yellow-600 hover:bg-yellow-700"; // Bond
   };
 
   const getSignalInterpretation = (signal: string, momentum: any) => {
     if (!momentum) return "";
 
-    const spyMom = momentum.SPY || 0;
-    const veuMom = momentum.VEU || 0;
-    const bndMom = momentum.BND || 0;
-    const tbillMom = momentum.TBILL || 0;
+    const eq1Mom = momentum[labels.eq1_tick] || 0;
+    const eq2Mom = momentum[labels.eq2_tick] || 0;
+    const bondMom = momentum[labels.bond_tick] || 0;
+    const thresholdMom = momentum.THRESHOLD || 0;
 
-    if (signal === "SPY") {
-      return `US equity markets (${formatPercent(spyMom)}) outperform both international stocks (${formatPercent(veuMom)}) and US Treasury Bills (${formatPercent(tbillMom)}). The strategy allocates 100% to US stocks for maximum growth potential.`;
-    } else if (signal === "VEU") {
-      return `International equity markets (${formatPercent(veuMom)}) demonstrate superior momentum compared to US stocks (${formatPercent(spyMom)}) and exceed the Treasury Bill threshold (${formatPercent(tbillMom)}). The strategy rotates to global ex-US equities for optimal returns.`;
-    } else if (signal === "BND") {
-      const tbillRef = `Treasury Bills (${formatPercent(tbillMom)})`;
-      if (spyMom < tbillMom && veuMom < tbillMom) {
-        return `Neither US stocks (${formatPercent(spyMom)}) nor international stocks (${formatPercent(veuMom)}) exceed the ${tbillRef} threshold. The strategy moves to bonds (${formatPercent(bndMom)}) for capital preservation.`;
+    if (signal === labels.eq1_tick) {
+      return `${labels.eq1} (${formatPercent(eq1Mom)}) outperform both international stocks (${formatPercent(eq2Mom)}) and ${labels.threshold} (${formatPercent(thresholdMom)}). The strategy allocates 100% to this asset for maximum growth potential.`;
+    } else if (signal === labels.eq2_tick) {
+      return `${labels.eq2} (${formatPercent(eq2Mom)}) demonstrate superior momentum compared to ${labels.eq1} (${formatPercent(eq1Mom)}) and exceed the ${labels.threshold} threshold (${formatPercent(thresholdMom)}). The strategy rotates for optimal returns.`;
+    } else if (signal === labels.bond_tick || signal === "BND" || signal === "AGGH.AS") {
+      const thresholdRef = `${labels.threshold} (${formatPercent(thresholdMom)})`;
+      if (eq1Mom < thresholdMom && eq2Mom < thresholdMom) {
+        return `Neither ${labels.eq1} (${formatPercent(eq1Mom)}) nor ${labels.eq2} (${formatPercent(eq2Mom)}) exceed the ${thresholdRef} threshold. The strategy moves to bonds (${formatPercent(bondMom)}) for capital preservation.`;
       } else {
-        return `Equity momentum does not sufficiently exceed the risk-free rate. The strategy defensively positions in bonds (${formatPercent(bndMom)}) to protect capital.`;
+        return `Equity momentum does not sufficiently exceed the risk-free rate. The strategy defensively positions in bonds (${formatPercent(bondMom)}) to protect capital.`;
       }
     }
     return "";
@@ -86,10 +125,47 @@ export default function Home() {
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-border pb-4 gap-4 md:gap-0">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tighter text-foreground">GEM DASHBOARD</h1>
-            <p className="text-xs md:text-sm text-muted-foreground">Global Equity Momentum • 12-Month Lookback</p>
+            <p className="text-xs md:text-sm text-muted-foreground">Global Equity Momentum • {region} Strategy</p>
           </div>
-          <div className="flex items-center gap-4 self-end md:self-auto">
+          <div className="flex items-center gap-3 self-end md:self-auto">
             <ThemeToggle />
+
+            <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+              <Button
+                variant="outline"
+                size="icon"
+                className="border-border text-muted-foreground w-8 h-8 rounded-full"
+                onClick={() => setSettingsOpen(true)}
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+              <DialogContent className="max-w-xs">
+                <DialogHeader>
+                  <DialogTitle>Regional Settings</DialogTitle>
+                  <DialogDescription>
+                    Choose your investment region
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                  <RadioGroup value={region} onValueChange={handleRegionChange} className="space-y-4">
+                    <div className="flex items-center space-x-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                      <RadioGroupItem value="US" id="us" />
+                      <Label htmlFor="us" className="flex-1 cursor-pointer">
+                        <div className="font-semibold">United States</div>
+                        <div className="text-xs text-muted-foreground">SPY, VEU, BND, ^IRX</div>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                      <RadioGroupItem value="EU" id="eu" />
+                      <Label htmlFor="eu" className="flex-1 cursor-pointer">
+                        <div className="font-semibold">Europe (UCITS)</div>
+                        <div className="text-xs text-muted-foreground">CSPX, EXUS, AGGH, PJEU</div>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              </DialogContent>
+            </Dialog>
 
             <Dialog open={statusOpen} onOpenChange={setStatusOpen}>
               <Badge
@@ -162,19 +238,19 @@ export default function Home() {
                 <div>
                   <h3 className="font-semibold text-foreground mb-2">What is GEM?</h3>
                   <p className="text-muted-foreground leading-relaxed">
-                    Global Equity Momentum (GEM) is a systematic investment strategy that rotates between US stocks (SPY),
-                    international stocks (VEU), and bonds (BND) based on 12-month momentum. The strategy selects the
-                    best-performing equity asset if its momentum is positive; otherwise, it allocates to bonds for downside protection.
+                    Global Equity Momentum (GEM) is a systematic investment strategy that rotates between {labels.eq1},
+                    {labels.eq2}, and {labels.bond} based on 12-month momentum. The strategy selects the
+                    best-performing equity asset if its momentum exceeds the {labels.threshold}; otherwise, it allocates to bonds for downside protection.
                   </p>
                 </div>
 
                 <div>
                   <h3 className="font-semibold text-foreground mb-2">How it Works</h3>
                   <ul className="list-disc list-inside text-muted-foreground space-y-1 leading-relaxed">
-                    <li>Calculate 12-month total return for SPY, VEU, and US T-Bills</li>
+                    <li>Calculate 12-month total return for {labels.eq1_tick}, {labels.eq2_tick}, and {labels.threshold}</li>
                     <li>Select the equity asset with higher momentum</li>
-                    <li>If selected equity exceeds T-Bill returns, allocate 100% to that equity</li>
-                    <li>Otherwise, move to bonds (BND) for capital preservation</li>
+                    <li>If selected equity exceeds {labels.threshold} returns, allocate 100% to that equity</li>
+                    <li>Otherwise, move to {labels.bond} ({labels.bond_tick}) for capital preservation</li>
                     <li>Rebalance monthly based on updated momentum signals</li>
                   </ul>
                 </div>
@@ -257,7 +333,7 @@ export default function Home() {
           <Card className="col-span-2 border-border bg-card overflow-hidden">
             <CardHeader>
               <CardTitle className="text-muted-foreground text-sm uppercase tracking-wider">Momentum Analysis (12-Mo)</CardTitle>
-              <CardDescription className="text-muted-foreground">Assets ranked by 12-month return. Logic: Buy best of SPY/VEU if &gt; T-Bills, else BND.</CardDescription>
+              <CardDescription className="text-muted-foreground">Assets ranked by 12-month return.</CardDescription>
             </CardHeader>
             <CardContent className="overflow-x-auto">
               <Table className="min-w-[600px] md:min-w-0">
@@ -275,14 +351,15 @@ export default function Home() {
                       <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">Loading market data...</TableCell>
                     </TableRow>
                   ) : data ? (
-                    ["SPY", "VEU", "BND", "TBILL"].sort((a, b) => {
-                      const aMom = a === "TBILL" ? (data.momentum.TBILL || 0) : (data.momentum[a as keyof typeof data.momentum] || 0);
-                      const bMom = b === "TBILL" ? (data.momentum.TBILL || 0) : (data.momentum[b as keyof typeof data.momentum] || 0);
+                    [labels.eq1_tick, labels.eq2_tick, labels.bond_tick, "THRESHOLD"].sort((a, b) => {
+                      const aMom = (data.momentum as any)[a] || 0;
+                      const bMom = (data.momentum as any)[b] || 0;
                       return bMom - aMom;
                     }).map((ticker) => {
                       const isCurrentSignal = ticker === data.signal;
-                      const momentum = ticker === "TBILL" ? (data.momentum.TBILL || 0) : (data.momentum[ticker as keyof typeof data.momentum] || 0);
-                      const price = ticker === "TBILL" ? null : (data.prices[ticker as keyof typeof data.prices] || 0);
+                      const momentum = (data.momentum as any)[ticker] || 0;
+                      const price = (data.prices as any)[ticker] || 0;
+                      const isThreshold = ticker === "THRESHOLD";
 
                       return (
                         <TableRow
@@ -290,7 +367,7 @@ export default function Home() {
                           className={`border-border hover:bg-muted/50 ${isCurrentSignal ? 'bg-accent/30' : ''}`}
                         >
                           <TableCell className="font-medium text-foreground">
-                            {ticker}
+                            {isThreshold ? labels.threshold : ticker}
                             {isCurrentSignal && (
                               <span className="ml-2 text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded">
                                 SELECTED
@@ -298,16 +375,16 @@ export default function Home() {
                             )}
                           </TableCell>
                           <TableCell className="text-muted-foreground">
-                            {ticker === "SPY" ? "US Stocks" :
-                              ticker === "VEU" ? "Global ex-US" :
-                                ticker === "BND" ? "Total Bond Market" :
-                                  "13-Week T-Bill"}
+                            {ticker === labels.eq1_tick ? labels.eq1 :
+                              ticker === labels.eq2_tick ? labels.eq2 :
+                                ticker === labels.bond_tick ? labels.bond :
+                                  labels.threshold}
                           </TableCell>
                           <TableCell className={`text-right ${momentum > 0 ? "text-green-500" : "text-red-500"}`}>
                             {formatPercent(momentum)}
                           </TableCell>
                           <TableCell className="text-right text-foreground">
-                            {price !== null ? formatPrice(price) : "—"}
+                            {price && !isThreshold ? formatPrice(price) : "—"}
                           </TableCell>
                         </TableRow>
                       );
@@ -344,12 +421,12 @@ export default function Home() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                <HistoryChart data={history} />
+                <HistoryChart data={history} labels={labels} />
 
                 <Collapsible open={historyOpen} onOpenChange={setHistoryOpen}>
                   <CollapsibleContent className="pt-4 border-t border-border">
                     <div className="overflow-x-auto">
-                      <HistoryTable data={history} />
+                      <HistoryTable data={history} labels={labels} />
                     </div>
                   </CollapsibleContent>
                 </Collapsible>

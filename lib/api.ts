@@ -29,16 +29,16 @@ export interface HistoryRecord {
 // OR use relative if using Next.js rewrites in next.config.ts (preferred).
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
 
-export async function fetchMomentumData(): Promise<MomentumData> {
-    const res = await fetch(`${API_BASE}/momentum`, { cache: 'no-store' });
-    if (!res.ok) throw new Error('Failed to fetch momentum data');
-    return res.json();
+export async function fetchMomentumData(region: string = "US"): Promise<MomentumData> {
+    const response = await fetch(`${API_BASE}/momentum?region=${region}`);
+    if (!response.ok) throw new Error("Failed to fetch momentum data");
+    return response.json();
 }
 
-export async function fetchHistory(): Promise<HistoryRecord[]> {
-    const res = await fetch(`${API_BASE}/history`, { cache: 'no-store' });
-    if (!res.ok) throw new Error('Failed to fetch history');
-    return res.json();
+export async function fetchHistory(region: string = "US"): Promise<HistoryRecord[]> {
+    const response = await fetch(`${API_BASE}/history?region=${region}`);
+    if (!response.ok) throw new Error("Failed to fetch history");
+    return response.json();
 }
 
 export async function triggerUpdate(): Promise<void> {

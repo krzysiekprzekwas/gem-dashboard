@@ -17,20 +17,30 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def update_momentum_history():
-    """Detailed logic to fetch data and save to history."""
-    try:
-        logger.info("Starting scheduled momentum update...")
-        data = fetch_momentum_data()
-        record = save_momentum_record(
-            spy=data['momentum']['SPY'],
-            veu=data['momentum']['VEU'],
-            bnd=data['momentum']['BND'],
-            tbill=data['momentum']['TBILL'],
-            signal=data['signal']
-        )
-        logger.info(f"Successfully saved momentum record: {record}")
-    except Exception as e:
-        logger.error(f"Failed to update momentum history: {e}")
+    """Detailed logic to fetch data and save to history for all regions."""
+    regions = ["US", "EU"]
+    for region in regions:
+        try:
+            logger.info(f"Starting scheduled momentum update for {region}...")
+            data = fetch_momentum_data(region=region)
+            
+            # Extract tickers for the region to mapping to spy_mom, veu_mom etc
+            # This is a bit tricky because the DB schema is fixed with spy_mom, veu_mom
+            # We'll map Eq1 -> spy, Eq2 -> veu, Bond -> bnd, Threshold -> tbill
+            from momentum import REGION_CONFIGS
+            config = REGION_CONFIGS[region]
+            
+            record = save_momentum_record(
+                spy=data['momentum'][config['Equity1']],
+                veu=data['momentum'][config['Equity2']],
+                bnd=data['momentum'][config['Bond']],
+                tbill=data['momentum']['THRESHOLD'],
+                signal=data['signal'],
+                region=region
+            )
+            logger.info(f"Successfully saved momentum record for {region}: {record}")
+        except Exception as e:
+            logger.error(f"Failed to update momentum history for {region}: {e}")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -39,10 +49,10 @@ async def lifespan(app: FastAPI):
     
     scheduler = BackgroundScheduler()
     # Schedule for 4:00 PM EST (New York time) every week day
-    trigger = CronTrigger(day_of_week='mon-fri', hour=16, minute=0, timezone='America/New_York')
+    trigger = CronTrigger(day_of_week='mon-fri', hour=16, minute=10, timezone='America/New_York')
     scheduler.add_job(update_momentum_history, trigger)
     scheduler.start()
-    logger.info("Scheduler started for 4:00 PM EST.")
+    logger.info("Scheduler started.")
     
     yield
     
@@ -70,29 +80,25 @@ def read_root():
     return {"message": "GEM Dashboard API is running"}
 
 @app.get("/api/momentum")
-def get_momentum():
+def get_momentum(region: str = "US"):
     try:
-        data = fetch_momentum_data()
+        data = fetch_momentum_data(region=region)
         return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/history")
-def read_history():
-    """Fetch persistent history."""
-    return get_history()
+def read_history(region: str = "US"):
+    """Fetch persistent history for a specific region."""
+    return get_history(region=region)
 
 @app.get("/api/cron-update")
 def cron_update(background_tasks: BackgroundTasks, auth_header: str | None = Header(default=None, alias="Authorization")):
     """
     Triggered by Vercel Cron. 
-    Secured by Checking for a secret key if set in env.
     """
     cron_secret = os.getenv("CRON_SECRET")
     if cron_secret and auth_header != f"Bearer {cron_secret}":
-         # On Vercel, Cron jobs are verified by Vercel signature generally, 
-         # but a simple secret header is good practice for manual triggers too.
-         # For simplicity, we'll allow standard requests if no secret is set (dev mode).
          logger.warning("Unauthorized cron attempt")
          raise HTTPException(status_code=401, detail="Unauthorized")
 

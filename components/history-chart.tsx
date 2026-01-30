@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine } from "recharts";
 import { useTheme } from "next-themes";
 
-export function HistoryChart({ data }: { data: HistoryRecord[] }) {
+export function HistoryChart({ data, labels }: { data: HistoryRecord[], labels: any }) {
     const { theme } = useTheme();
     // Reverse and limit to ~6 months (180 days)
     const chartData = [...data]
@@ -14,8 +14,9 @@ export function HistoryChart({ data }: { data: HistoryRecord[] }) {
         .map(d => ({
             ...d,
             dateStr: new Date(d.date).toLocaleDateString(),
-            // Map signals to numeric values for Step Chart: BND=0, VEU=1, SPY=2
-            signalValue: d.signal === 'BND' ? 0 : d.signal === 'VEU' ? 1 : 2
+            // Map signals to numeric values for Step Chart: Bond=0, Eq2=1, Eq1=2
+            signalValue: (d.signal === labels.bond_tick || d.signal === 'BND' || d.signal === 'AGGH.AS') ? 0 :
+                (d.signal === labels.eq2_tick || d.signal === 'VEU' || d.signal === 'EXUS.L') ? 1 : 2
         }));
 
     const isDark = theme === "dark";
@@ -28,10 +29,13 @@ export function HistoryChart({ data }: { data: HistoryRecord[] }) {
             return (
                 <div className="bg-popover border border-border p-2 rounded shadow-xl text-popover-foreground text-xs">
                     <p className="font-bold mb-1">{label}</p>
-                    <p>Signal: <span className={d.signal === 'SPY' ? 'text-green-500' : d.signal === 'VEU' ? 'text-blue-500' : 'text-yellow-500'}>{d.signal}</span></p>
-                    <p>SPY: {(d.spy_mom * 100).toFixed(2)}%</p>
-                    <p>VEU: {(d.veu_mom * 100).toFixed(2)}%</p>
-                    {d.tbill_mom !== undefined && <p>T-Bill: {(d.tbill_mom * 100).toFixed(2)}%</p>}
+                    <p>Signal: <span className={(d.signal === labels.eq1_tick || d.signal === 'SPY') ? 'text-green-500' :
+                        (d.signal === labels.eq2_tick || d.signal === 'VEU') ? 'text-blue-500' : 'text-yellow-500'}>
+                        {d.signal}
+                    </span></p>
+                    <p>{labels.eq1_tick}: {(d.spy_mom * 100).toFixed(2)}%</p>
+                    <p>{labels.eq2_tick}: {(d.veu_mom * 100).toFixed(2)}%</p>
+                    {d.tbill_mom !== undefined && <p>{labels.threshold}: {(d.tbill_mom * 100).toFixed(2)}%</p>}
                 </div>
             );
         }
@@ -57,7 +61,7 @@ export function HistoryChart({ data }: { data: HistoryRecord[] }) {
                         tickLine={false}
                         axisLine={false}
                         ticks={[0, 1, 2]}
-                        tickFormatter={(val) => val === 0 ? "BND" : val === 1 ? "VEU" : "SPY"}
+                        tickFormatter={(val) => val === 0 ? labels.bond_tick : val === 1 ? labels.eq2_tick : labels.eq1_tick}
                     />
                     <Tooltip content={<CustomTooltip />} />
                     <Line

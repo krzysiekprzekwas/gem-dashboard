@@ -6,6 +6,7 @@ from typing import Optional
 class MomentumHistory(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     date: datetime = Field(default_factory=datetime.now)
+    region: str = Field(default="US", index=True)
     spy_mom: float
     veu_mom: float
     bnd_mom: float
@@ -35,10 +36,11 @@ def get_session():
     with Session(engine) as session:
         yield session
 
-def save_momentum_record(spy: float, veu: float, bnd: float, signal: str, tbill: float = None):
+def save_momentum_record(spy: float, veu: float, bnd: float, signal: str, tbill: float = None, region: str = "US"):
     """Saves a momentum record to the database."""
     with Session(engine) as session:
         record = MomentumHistory(
+            region=region,
             spy_mom=spy,
             veu_mom=veu,
             bnd_mom=bnd,
@@ -51,10 +53,12 @@ def save_momentum_record(spy: float, veu: float, bnd: float, signal: str, tbill:
         print(f"Saved record: {record}")
         return record
 
-def get_history(limit: int = 180):
-    """Fetches the last N records."""
+def get_history(region: str = "US", limit: int = 180):
+    """Fetches the last N records for a specific region."""
     with Session(engine) as session:
-
-        statement = select(MomentumHistory).order_by(MomentumHistory.date.desc()).limit(limit)
+        statement = select(MomentumHistory)\
+            .where(MomentumHistory.region == region)\
+            .order_by(MomentumHistory.date.desc())\
+            .limit(limit)
         results = session.exec(statement).all()
         return results
