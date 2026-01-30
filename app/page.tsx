@@ -182,12 +182,12 @@ export default function Home() {
                   <h3 className="font-semibold text-foreground mb-2">External Resources</h3>
                   <div className="grid md:grid-cols-2 gap-2">
                     <a
-                      href="https://allocatesmartly.com/gem-global-equities-momentum/"
+                      href="https://investresolve.com/global-equity-momentum-executive-summary/"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-500 hover:text-blue-400 underline underline-offset-4 flex items-center gap-1"
                     >
-                      <span>AllocateSmartly: GEM Overview</span>
+                      <span>Global Equity Momentum: A Craftsman’s Perspective</span>
                       <span className="text-xs">↗</span>
                     </a>
                     <a
@@ -200,21 +200,12 @@ export default function Home() {
                       <span className="text-xs">↗</span>
                     </a>
                     <a
-                      href="https://www.etf.com/sections/index-investor-corner/swedroe-momentum-investing-works"
+                      href="https://blog.thinknewfound.com/2019/01/fragility-case-study-dual-momentum-gem/"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-500 hover:text-blue-400 underline underline-offset-4 flex items-center gap-1"
                     >
-                      <span>Why Momentum Works (ETF.com)</span>
-                      <span className="text-xs">↗</span>
-                    </a>
-                    <a
-                      href="https://www.optimizedportfolio.com/gem/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-500 hover:text-blue-400 underline underline-offset-4 flex items-center gap-1"
-                    >
-                      <span>Backtest Results (Optimized Portfolio)</span>
+                      <span>Dual Momentum GEM</span>
                       <span className="text-xs">↗</span>
                     </a>
                   </div>
