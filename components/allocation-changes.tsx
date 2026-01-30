@@ -21,15 +21,14 @@ export function AllocationChanges({ data }: { data: HistoryRecord[] }) {
         }
     }
 
-    // If no shift found in history, we can't show much
     if (shiftIndex === -1) {
         return (
-            <Card className="bg-neutral-900 border-neutral-800 mb-6">
+            <Card className="bg-card border-border mb-6">
                 <CardHeader>
-                    <CardTitle className="text-neutral-400 text-sm uppercase tracking-wider">Allocation Trend</CardTitle>
+                    <CardTitle className="text-muted-foreground text-sm uppercase tracking-wider">Allocation Trend</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-neutral-500">Signal has been stable as <strong>{currentSignal}</strong> for the entire available history ({sorted.length} days).</p>
+                    <p className="text-muted-foreground">Signal has been stable as <strong>{currentSignal}</strong> for the entire available history ({sorted.length} days).</p>
                 </CardContent>
             </Card>
         );
@@ -67,59 +66,60 @@ export function AllocationChanges({ data }: { data: HistoryRecord[] }) {
     }
 
     return (
-        <Card className="bg-neutral-900 border-neutral-800 mb-6 col-span-2">
+        <Card className="bg-card border-border mb-6 col-span-2">
             <CardHeader className="pb-2">
-                <CardTitle className="text-white text-lg tracking-tight">Allocation Changes</CardTitle>
-                <CardDescription className="text-neutral-500">Trend stability analysis</CardDescription>
+                <CardTitle className="text-foreground text-lg tracking-tight">Allocation Changes</CardTitle>
+                <CardDescription className="text-muted-foreground">Trend stability analysis</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 pt-4">
 
                 {/* LATEST SHIFT */}
-                <div className="flex flex-col space-y-2 p-4 bg-neutral-950/50 rounded-lg border border-neutral-800">
-                    <span className="text-xs text-neutral-500 uppercase tracking-widest font-semibold flex items-center">
+                <div className="flex flex-col space-y-2 p-4 bg-muted/50 rounded-lg border border-border">
+                    <span className="text-xs text-muted-foreground uppercase tracking-widest font-semibold flex items-center">
                         <ArrowRightIcon className="w-3 h-3 mr-2" /> Latest Shift
                     </span>
-                    <div className="flex items-center space-x-2 text-sm text-neutral-300">
+                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                         <span className={`font-bold ${previousSignal === 'SPY' ? 'text-green-500' : previousSignal === 'VEU' ? 'text-blue-500' : 'text-yellow-500'}`}>
                             {previousSignal}
                         </span>
-                        <span className="text-neutral-600">→</span>
+                        <span className="text-muted-foreground">→</span>
                         <span className={`font-bold ${currentSignal === 'SPY' ? 'text-green-500' : currentSignal === 'VEU' ? 'text-blue-500' : 'text-yellow-500'}`}>
                             {currentSignal}
                         </span>
                     </div>
-                    <div className="text-xs text-neutral-500">
+                    <div className="text-xs text-muted-foreground">
                         Occurred on {new Date(currentRunStart.date).toLocaleDateString()}
                     </div>
                 </div>
 
                 {/* CURRENT STREAK */}
-                <div className="flex flex-col space-y-2 p-4 bg-neutral-950/50 rounded-lg border border-neutral-800">
-                    <span className="text-xs text-neutral-500 uppercase tracking-widest font-semibold flex items-center">
+                <div className="flex flex-col space-y-2 p-4 bg-muted/50 rounded-lg border border-border">
+                    <span className="text-xs text-muted-foreground uppercase tracking-widest font-semibold flex items-center">
                         <ClockIcon className="w-3 h-3 mr-2" /> Current Trend
                     </span>
-                    <div className="text-2xl font-mono text-white">
-                        {daysSinceShift} <span className="text-sm text-neutral-500 font-sans">Days</span>
+                    <div className="text-2xl font-mono text-foreground">
+                        {daysSinceShift} <span className="text-sm text-muted-foreground font-sans">Days</span>
                     </div>
-                    <div className="text-xs text-neutral-500">
+                    <div className="text-xs text-muted-foreground">
                         Stable since shift
                     </div>
                 </div>
 
                 {/* PREVIOUS STREAK */}
-                <div className="flex flex-col space-y-2 p-4 bg-neutral-950/50 rounded-lg border border-neutral-800">
-                    <span className="text-xs text-neutral-500 uppercase tracking-widest font-semibold flex items-center">
+                <div className="flex flex-col space-y-2 p-4 bg-muted/50 rounded-lg border border-border">
+                    <span className="text-xs text-muted-foreground uppercase tracking-widest font-semibold flex items-center">
                         <CalendarIcon className="w-3 h-3 mr-2" /> Previous Duration
                     </span>
-                    <div className="text-2xl font-mono text-neutral-400">
-                        {prevRunDays} <span className="text-sm text-neutral-600 font-sans">Days</span>
+                    <div className="text-2xl font-mono text-muted-foreground">
+                        {prevRunDays} <span className="text-sm text-muted-foreground font-sans">Days</span>
                     </div>
-                    <div className="text-xs text-neutral-500">
+                    <div className="text-xs text-muted-foreground">
                         Duration of {previousSignal} signal
                     </div>
                 </div>
 
             </CardContent>
         </Card>
+
     );
 }

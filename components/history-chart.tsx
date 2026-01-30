@@ -3,8 +3,10 @@
 import { HistoryRecord } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine } from "recharts";
+import { useTheme } from "next-themes";
 
 export function HistoryChart({ data }: { data: HistoryRecord[] }) {
+    const { theme } = useTheme();
     // Reverse data for chart (oldest to newest)
     const chartData = [...data].reverse().map(d => ({
         ...d,
@@ -13,13 +15,17 @@ export function HistoryChart({ data }: { data: HistoryRecord[] }) {
         signalValue: d.signal === 'BND' ? 0 : d.signal === 'VEU' ? 1 : 2
     }));
 
+    const isDark = theme === "dark";
+    const axisColor = isDark ? "#525252" : "#a3a3a3";
+    const gridColor = isDark ? "#262626" : "#e5e5e5";
+
     const CustomTooltip = ({ active, payload, label }: any) => {
         if (active && payload && payload.length) {
             const d = payload[0].payload;
             return (
-                <div className="bg-neutral-900 border border-neutral-800 p-2 rounded shadow-xl text-neutral-200 text-xs">
+                <div className="bg-popover border border-border p-2 rounded shadow-xl text-popover-foreground text-xs">
                     <p className="font-bold mb-1">{label}</p>
-                    <p>Signal: <span className={d.signal === 'SPY' ? 'text-green-400' : d.signal === 'VEU' ? 'text-blue-400' : 'text-yellow-400'}>{d.signal}</span></p>
+                    <p>Signal: <span className={d.signal === 'SPY' ? 'text-green-500' : d.signal === 'VEU' ? 'text-blue-500' : 'text-yellow-500'}>{d.signal}</span></p>
                     <p>SPY: {(d.spy_mom * 100).toFixed(2)}%</p>
                     <p>VEU: {(d.veu_mom * 100).toFixed(2)}%</p>
                 </div>
@@ -29,26 +35,26 @@ export function HistoryChart({ data }: { data: HistoryRecord[] }) {
     };
 
     return (
-        <Card className="bg-neutral-900 border-neutral-800">
+        <Card className="bg-card border-border">
             <CardHeader>
-                <CardTitle className="text-neutral-400 text-sm uppercase tracking-wider">Signal History (6 Months)</CardTitle>
-                <CardDescription className="text-neutral-600">Evolution of the trading signal over time.</CardDescription>
+                <CardTitle className="text-muted-foreground text-sm uppercase tracking-wider">Signal History (6 Months)</CardTitle>
+                <CardDescription className="text-muted-foreground">Evolution of the trading signal over time.</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="h-[300px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#262626" vertical={false} />
+                            <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
                             <XAxis
                                 dataKey="dateStr"
-                                stroke="#525252"
+                                stroke={axisColor}
                                 fontSize={10}
                                 tickLine={false}
                                 axisLine={false}
                                 minTickGap={30}
                             />
                             <YAxis
-                                stroke="#525252"
+                                stroke={axisColor}
                                 fontSize={10}
                                 tickLine={false}
                                 axisLine={false}
@@ -71,3 +77,4 @@ export function HistoryChart({ data }: { data: HistoryRecord[] }) {
         </Card>
     );
 }
+
