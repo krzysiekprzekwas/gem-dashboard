@@ -52,6 +52,28 @@ export default function Home() {
     return "bg-yellow-600 hover:bg-yellow-700"; // BND
   };
 
+  const getSignalInterpretation = (signal: string, momentum: any) => {
+    if (!momentum) return "";
+
+    const spyMom = momentum.SPY || 0;
+    const veuMom = momentum.VEU || 0;
+    const bndMom = momentum.BND || 0;
+
+    if (signal === "SPY") {
+      return `US equity markets (${formatPercent(spyMom)}) show the strongest momentum, exceeding international stocks (${formatPercent(veuMom)}). The strategy allocates 100% to US stocks for maximum growth potential.`;
+    } else if (signal === "VEU") {
+      return `International equity markets (${formatPercent(veuMom)}) demonstrate superior momentum compared to US stocks (${formatPercent(spyMom)}). The strategy rotates to global ex-US equities for optimal returns.`;
+    } else if (signal === "BND") {
+      if (spyMom < 0 && veuMom < 0) {
+        return `Both US (${formatPercent(spyMom)}) and international (${formatPercent(veuMom)}) equity markets show negative momentum. The strategy moves to bonds (${formatPercent(bndMom)}) for capital preservation during market downturns.`;
+      } else {
+        const bestEquity = spyMom > veuMom ? `US stocks (${formatPercent(spyMom)})` : `international stocks (${formatPercent(veuMom)})`;
+        return `While ${bestEquity} show positive momentum, they don't meet the threshold for equity allocation. The strategy defensively positions in bonds (${formatPercent(bndMom)}) to protect capital.`;
+      }
+    }
+    return "";
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8 font-mono">
       <div className="max-w-4xl mx-auto space-y-8">
@@ -185,8 +207,8 @@ export default function Home() {
         </Card>
 
         <main className="grid gap-6 md:grid-cols-2">
-          {/* SIGNAL CARD */}
-          <Card className="col-span-2 md:col-span-1 border-border bg-card">
+          {/* SIGNAL CARD - FULL WIDTH */}
+          <Card className="col-span-2 border-border bg-card">
             <CardHeader>
               <CardTitle className="text-muted-foreground text-sm uppercase tracking-wider">Current Allocation</CardTitle>
             </CardHeader>
@@ -196,13 +218,24 @@ export default function Home() {
               ) : error ? (
                 <div className="text-destructive">{error}</div>
               ) : (
-                <div className="flex items-center space-x-4">
-                  <Badge className={`text-4xl px-6 py-2 ${getSignalColor(data?.signal || "")}`}>
-                    {data?.signal}
-                  </Badge>
-                  <div className="text-sm text-muted-foreground">
-                    Target Allocation
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-4">
+                    <Badge className={`text-4xl px-6 py-2 ${getSignalColor(data?.signal || "")}`}>
+                      {data?.signal}
+                    </Badge>
+                    <div className="text-sm text-muted-foreground">
+                      Target Allocation
+                    </div>
                   </div>
+
+                  {/* INTERPRETATION */}
+                  {data && (
+                    <div className="bg-muted/30 border border-border rounded-lg p-4">
+                      <p className="text-sm text-foreground leading-relaxed">
+                        <span className="font-semibold">Strategy Rationale:</span> {getSignalInterpretation(data.signal, data.momentum)}
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
