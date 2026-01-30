@@ -51,14 +51,14 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-8 font-mono">
+    <div className="min-h-screen bg-background text-foreground p-4 md:p-8 font-mono">
       <div className="max-w-4xl mx-auto space-y-8">
-        <header className="flex justify-between items-center border-b border-border pb-4">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-border pb-4 gap-4 md:gap-0">
           <div>
-            <h1 className="text-3xl font-bold tracking-tighter text-foreground">GEM DASHBOARD</h1>
-            <p className="text-sm text-muted-foreground">Global Equity Momentum • 12-Month Lookback</p>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tighter text-foreground">GEM DASHBOARD</h1>
+            <p className="text-xs md:text-sm text-muted-foreground">Global Equity Momentum • 12-Month Lookback</p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 self-end md:self-auto">
             <ThemeToggle />
             <Badge variant="outline" className="text-muted-foreground border-border">
               {loading ? "CONNECTING..." : "LIVE"}
@@ -104,19 +104,19 @@ export default function Home() {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Data Source</span>
-                <span className="text-foreground">Yahoo Finance (Real-time*)</span>
+                <span className="text-foreground text-right truncate pl-4">Yahoo Finance (Real-time*)</span>
               </div>
             </CardContent>
           </Card>
 
           {/* MOMENTUM TABLE */}
-          <Card className="col-span-2 border-border bg-card">
+          <Card className="col-span-2 border-border bg-card overflow-hidden">
             <CardHeader>
               <CardTitle className="text-muted-foreground text-sm uppercase tracking-wider">Momentum Analysis (12-Mo)</CardTitle>
               <CardDescription className="text-muted-foreground">Assets ranked by 12-month return. Logic: Buy best of SPY/VEU if &gt; 0, else BND.</CardDescription>
             </CardHeader>
-            <CardContent>
-              <Table>
+            <CardContent className="overflow-x-auto">
+              <Table className="min-w-[600px] md:min-w-0">
                 <TableHeader>
                   <TableRow className="border-border hover:bg-transparent">
                     <TableHead className="text-muted-foreground">Asset</TableHead>
