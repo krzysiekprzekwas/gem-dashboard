@@ -293,9 +293,9 @@ export default function Home() {
           </Card>
         </Collapsible>
 
-        <main className="grid gap-6 md:grid-cols-2">
+        <main className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {/* SIGNAL CARD - FULL WIDTH */}
-          <Card className="col-span-2 border-border bg-card">
+          <Card className="md:col-span-2 border-border bg-card">
             <CardHeader>
               <CardTitle className="text-muted-foreground text-sm uppercase tracking-wider">Current Allocation</CardTitle>
             </CardHeader>
@@ -329,7 +329,7 @@ export default function Home() {
           </Card>
 
           {/* MOMENTUM TABLE */}
-          <Card className="col-span-2 border-border bg-card overflow-hidden">
+          <Card className="md:col-span-2 border-border bg-card overflow-hidden">
             <CardHeader>
               <CardTitle className="text-muted-foreground text-sm uppercase tracking-wider">Momentum Analysis (12-Mo)</CardTitle>
               <CardDescription className="text-muted-foreground">Assets ranked by 12-month return.</CardDescription>
@@ -395,12 +395,12 @@ export default function Home() {
           </Card>
 
           {/* HISTORY SECTION */}
-          <div className="col-span-2 pt-8">
+          <div className="md:col-span-2 pt-8">
             <h2 className="text-2xl font-bold tracking-tighter text-foreground mb-4">History Analysis</h2>
 
             <AllocationChanges data={history} />
 
-            <Card className="bg-card border-border">
+            <Card className="bg-card border-border overflow-hidden">
               <CardHeader>
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -446,9 +446,7 @@ export default function Home() {
 
                 <Collapsible open={historyOpen} onOpenChange={setHistoryOpen}>
                   <CollapsibleContent className="pt-4 border-t border-border">
-                    <div className="overflow-x-auto">
-                      <HistoryTable data={history} labels={labels} />
-                    </div>
+                    <HistoryTable data={history} labels={labels} />
                   </CollapsibleContent>
                 </Collapsible>
               </CardContent>

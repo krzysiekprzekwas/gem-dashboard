@@ -18,7 +18,8 @@ export const HistoryTable = memo(function HistoryTable({ data, labels }: { data:
 
     return (
         <div className="space-y-4">
-            <Table>
+            <div className="overflow-x-auto">
+                <Table className="min-w-[600px] md:min-w-0">
                 <TableHeader>
                     <TableRow className="border-border hover:bg-transparent text-xs">
                         <TableHead className="text-muted-foreground">Date</TableHead>
@@ -55,6 +56,7 @@ export const HistoryTable = memo(function HistoryTable({ data, labels }: { data:
                     )}
                 </TableBody>
             </Table>
+            </div>
 
             {totalPages > 1 && (
                 <div className="flex items-center justify-between py-2">
