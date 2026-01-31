@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { fetchMomentumData, fetchHistory, MomentumData, HistoryRecord } from "@/lib/api";
+import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import { useMomentumData, useHistoryData, MomentumData, HistoryRecord } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,11 +13,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AllocationChanges } from "@/components/allocation-changes";
 import { HistoryTable } from "@/components/history-table";
-import { HistoryChart } from "@/components/history-chart";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ChevronDown, Settings, Globe } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+
+// Lazy load HistoryChart with Recharts library to reduce initial bundle size
+const HistoryChart = dynamic(
+  () => import("@/components/history-chart").then((mod) => ({ default: mod.HistoryChart })),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-[300px] w-full" />
+  }
+);
 
 // Helper functions moved outside component for performance
 // These don't depend on props/state, so they don't need to be recreated on every render
@@ -45,10 +54,6 @@ const REGION_LABELS: Record<string, any> = {
 };
 
 export default function Home() {
-  const [data, setData] = useState<MomentumData | null>(null);
-  const [history, setHistory] = useState<HistoryRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [statusOpen, setStatusOpen] = useState(false);
   const [strategyOpen, setStrategyOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -62,32 +67,16 @@ export default function Home() {
     if (savedRegion) setRegion(savedRegion);
   }, []);
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        // Calculate appropriate limit based on selected range
-        // 3m ~= 63 trading days, 1y ~= 252 trading days
-        const limit = historyRange === "3m" ? 100 : historyRange === "1y" ? 300 : 1000;
-        
-        const [resMom, resHist] = await Promise.all([
-          fetchMomentumData(region),
-          fetchHistory(region, limit)
-        ]);
-        setData(resMom);
-        setHistory(resHist);
-        setError(null);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to connect to backend service.");
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
-    // Poll every 60 seconds
-    const interval = setInterval(loadData, 60000);
-    return () => clearInterval(interval);
-  }, [region, historyRange]);
+  // Calculate appropriate limit based on selected range
+  // 3m ~= 63 trading days, 1y ~= 252 trading days
+  const limit = historyRange === "3m" ? 100 : historyRange === "1y" ? 300 : 1000;
+
+  // Use SWR hooks for automatic caching, revalidation, and request deduplication
+  const { data, isLoading: momentumLoading, error: momentumError } = useMomentumData(region);
+  const { data: history, isLoading: historyLoading, error: historyError } = useHistoryData(region, limit);
+
+  const loading = momentumLoading || historyLoading;
+  const error = momentumError || historyError;
 
   const handleRegionChange = (newRegion: string) => {
     setRegion(newRegion);
@@ -97,17 +86,8 @@ export default function Home() {
 
   const labels = REGION_LABELS[region] || REGION_LABELS.US;
 
-  const filteredHistory = useMemo(() => {
-    if (history.length === 0) return [];
-    const maxDate = new Date(Math.max(...history.map((r) => new Date(r.date).getTime())));
-    const cutoff3m = new Date(maxDate);
-    cutoff3m.setDate(cutoff3m.getDate() - 90);
-    const cutoff1y = new Date(maxDate);
-    cutoff1y.setDate(cutoff1y.getDate() - 365);
-    if (historyRange === "3m") return history.filter((r) => new Date(r.date) >= cutoff3m);
-    if (historyRange === "1y") return history.filter((r) => new Date(r.date) >= cutoff1y);
-    return history;
-  }, [history, historyRange]);
+  // No client-side filtering needed - backend provides correctly limited data via the limit parameter
+  // This prevents double filtering and eliminates the "blink" effect when switching ranges
 
   const getSignalColor = (signal: string) => {
     if (signal === labels.eq1_tick) return "bg-green-600 hover:bg-green-700";
@@ -462,12 +442,12 @@ export default function Home() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                <HistoryChart data={filteredHistory} labels={labels} />
+                <HistoryChart data={history} labels={labels} />
 
                 <Collapsible open={historyOpen} onOpenChange={setHistoryOpen}>
                   <CollapsibleContent className="pt-4 border-t border-border">
                     <div className="overflow-x-auto">
-                      <HistoryTable data={filteredHistory} labels={labels} />
+                      <HistoryTable data={history} labels={labels} />
                     </div>
                   </CollapsibleContent>
                 </Collapsible>
