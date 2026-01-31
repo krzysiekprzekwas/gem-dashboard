@@ -1,11 +1,11 @@
 "use client";
 
+import { memo, useCallback } from "react";
 import { HistoryRecord } from "@/lib/api";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine } from "recharts";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { useTheme } from "next-themes";
 
-export function HistoryChart({ data, labels }: { data: HistoryRecord[], labels: any }) {
+export const HistoryChart = memo(function HistoryChart({ data, labels }: { data: HistoryRecord[], labels: any }) {
     const { theme } = useTheme();
     // Data is already filtered by parent; reverse for chronological X axis
     const chartData = [...data]
@@ -22,7 +22,7 @@ export function HistoryChart({ data, labels }: { data: HistoryRecord[], labels: 
     const axisColor = isDark ? "#525252" : "#a3a3a3";
     const gridColor = isDark ? "#262626" : "#e5e5e5";
 
-    const CustomTooltip = ({ active, payload, label }: any) => {
+    const CustomTooltip = useCallback(({ active, payload, label }: any) => {
         if (active && payload && payload.length) {
             const d = payload[0].payload;
             return (
@@ -39,7 +39,7 @@ export function HistoryChart({ data, labels }: { data: HistoryRecord[], labels: 
             );
         }
         return null;
-    };
+    }, [labels]);
 
     return (
         <div className="h-[300px] w-full">
@@ -62,7 +62,7 @@ export function HistoryChart({ data, labels }: { data: HistoryRecord[], labels: 
                         ticks={[0, 1, 2]}
                         tickFormatter={(val) => val === 0 ? labels.bond_tick : val === 1 ? labels.eq2_tick : labels.eq1_tick}
                     />
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={CustomTooltip} />
                     <Line
                         type="stepAfter"
                         dataKey="signalValue"
@@ -75,5 +75,4 @@ export function HistoryChart({ data, labels }: { data: HistoryRecord[], labels: 
             </ResponsiveContainer>
         </div>
     );
-}
-
+});

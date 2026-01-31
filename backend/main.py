@@ -88,9 +88,15 @@ def get_momentum(region: str = "US"):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/history")
-def read_history(region: str = "US"):
-    """Fetch persistent history for a specific region."""
-    return get_history(region=region)
+def read_history(region: str = "US", limit: int = 100):
+    """
+    Fetch persistent history for a specific region.
+    
+    Args:
+        region: Market region (US or EU)
+        limit: Maximum number of records to return (default 100)
+    """
+    return get_history(region=region, limit=limit)
 
 @app.get("/api/cron-update")
 def cron_update(background_tasks: BackgroundTasks, auth_header: str | None = Header(default=None, alias="Authorization")):

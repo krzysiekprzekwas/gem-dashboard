@@ -1,5 +1,5 @@
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import os
 
@@ -19,11 +19,32 @@ REGION_CONFIGS = {
     }
 }
 
+# Simple in-memory cache for ticker data
+# Reduces Yahoo Finance API calls and improves response time
+_TICKER_CACHE = {}
+_CACHE_TIMESTAMPS = {}
+CACHE_DURATION_MINUTES = int(os.getenv("CACHE_DURATION_MINUTES", "15"))  # Default 15 minutes
+
+def _is_cache_valid(ticker: str) -> bool:
+    """Check if cached data for ticker is still valid."""
+    if ticker not in _CACHE_TIMESTAMPS:
+        return False
+    age = datetime.now() - _CACHE_TIMESTAMPS[ticker]
+    return age < timedelta(minutes=CACHE_DURATION_MINUTES)
+
 def fetch_ticker_data(ticker):
     """
-    Fetch 2 years of daily data from Yahoo Finance Chart API.
+    Fetch 5 years of daily data from Yahoo Finance Chart API.
+    Uses in-memory cache to reduce API calls and improve performance.
     Returns list of dicts: {'date': timestamp, 'price': adjClose}
     """
+    # Check cache first
+    if _is_cache_valid(ticker):
+        print(f"Cache hit for {ticker}")
+        return _TICKER_CACHE[ticker]
+    
+    print(f"Cache miss for {ticker}, fetching from Yahoo Finance...")
+    
     # Use random user agents or specific ones to avoid 429
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
@@ -48,6 +69,10 @@ def fetch_ticker_data(ticker):
         for t, p in zip(timestamps, adj_close):
             if p is not None:
                 clean_data.append({'date': t, 'price': p})
+        
+        # Store in cache
+        _TICKER_CACHE[ticker] = clean_data
+        _CACHE_TIMESTAMPS[ticker] = datetime.now()
         
         return clean_data
     except Exception as e:

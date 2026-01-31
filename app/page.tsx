@@ -18,6 +18,32 @@ import { ChevronDown, Settings, Globe } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
+// Helper functions moved outside component for performance
+// These don't depend on props/state, so they don't need to be recreated on every render
+const formatPercent = (val: number) => (val * 100).toFixed(2) + "%";
+const formatPrice = (val: number) => "$" + val.toFixed(2);
+
+const REGION_LABELS: Record<string, any> = {
+  US: {
+    eq1: "US Stocks",
+    eq2: "Global ex-US",
+    bond: "Total Bonds",
+    threshold: "T-Bills",
+    eq1_tick: "SPY",
+    eq2_tick: "VEU",
+    bond_tick: "BND",
+  },
+  EU: {
+    eq1: "S&P 500",
+    eq2: "World ex-US",
+    bond: "Global Bonds",
+    threshold: "Euro Cash",
+    eq1_tick: "CSPX.AS",
+    eq2_tick: "EXUS.L",
+    bond_tick: "AGGH.AS",
+  }
+};
+
 export default function Home() {
   const [data, setData] = useState<MomentumData | null>(null);
   const [history, setHistory] = useState<HistoryRecord[]>([]);
@@ -39,9 +65,13 @@ export default function Home() {
   useEffect(() => {
     async function loadData() {
       try {
+        // Calculate appropriate limit based on selected range
+        // 3m ~= 63 trading days, 1y ~= 252 trading days
+        const limit = historyRange === "3m" ? 100 : historyRange === "1y" ? 300 : 1000;
+        
         const [resMom, resHist] = await Promise.all([
           fetchMomentumData(region),
-          fetchHistory(region)
+          fetchHistory(region, limit)
         ]);
         setData(resMom);
         setHistory(resHist);
@@ -57,7 +87,7 @@ export default function Home() {
     // Poll every 60 seconds
     const interval = setInterval(loadData, 60000);
     return () => clearInterval(interval);
-  }, [region]);
+  }, [region, historyRange]);
 
   const handleRegionChange = (newRegion: string) => {
     setRegion(newRegion);
@@ -65,28 +95,7 @@ export default function Home() {
     setSettingsOpen(false);
   };
 
-  const regionLabels: Record<string, any> = {
-    US: {
-      eq1: "US Stocks",
-      eq2: "Global ex-US",
-      bond: "Total Bonds",
-      threshold: "T-Bills",
-      eq1_tick: "SPY",
-      eq2_tick: "VEU",
-      bond_tick: "BND",
-    },
-    EU: {
-      eq1: "S&P 500",
-      eq2: "World ex-US",
-      bond: "Global Bonds",
-      threshold: "Euro Cash",
-      eq1_tick: "CSPX.AS",
-      eq2_tick: "EXUS.L",
-      bond_tick: "AGGH.AS",
-    }
-  };
-
-  const labels = regionLabels[region] || regionLabels.US;
+  const labels = REGION_LABELS[region] || REGION_LABELS.US;
 
   const filteredHistory = useMemo(() => {
     if (history.length === 0) return [];
@@ -99,9 +108,6 @@ export default function Home() {
     if (historyRange === "1y") return history.filter((r) => new Date(r.date) >= cutoff1y);
     return history;
   }, [history, historyRange]);
-
-  const formatPercent = (val: number) => (val * 100).toFixed(2) + "%";
-  const formatPrice = (val: number) => "$" + val.toFixed(2);
 
   const getSignalColor = (signal: string) => {
     if (signal === labels.eq1_tick) return "bg-green-600 hover:bg-green-700";

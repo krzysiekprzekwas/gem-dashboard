@@ -1,17 +1,18 @@
 "use client";
 
+import { memo } from "react";
 import { HistoryRecord } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ArrowRightIcon, CalendarIcon, ClockIcon } from "lucide-react";
 
-export function AllocationChanges({ data }: { data: HistoryRecord[] }) {
+export const AllocationChanges = memo(function AllocationChanges({ data }: { data: HistoryRecord[] }) {
     if (!data || data.length === 0) return null;
 
     // Sort descending by date
     const sorted = [...data].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     // Find latest shift
-    let currentSignal = sorted[0].signal;
+    const currentSignal = sorted[0].signal;
     let shiftIndex = -1;
 
     for (let i = 1; i < sorted.length; i++) {
@@ -122,4 +123,4 @@ export function AllocationChanges({ data }: { data: HistoryRecord[] }) {
         </Card>
 
     );
-}
+});

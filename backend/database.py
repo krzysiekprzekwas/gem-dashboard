@@ -54,8 +54,8 @@ def save_momentum_record(spy: float, veu: float, bnd: float, signal: str, tbill:
         print(f"Saved record: {record}")
         return record
 
-def get_history(region: str = "US", limit: int = 1000):
-    """Fetches the last N records for a specific region."""
+def get_history(region: str = "US", limit: int = 100):
+    """Fetches the last N records for a specific region. Default reduced to 100 for performance."""
     with Session(engine) as session:
         statement = select(MomentumHistory)\
             .where(MomentumHistory.region == region)\

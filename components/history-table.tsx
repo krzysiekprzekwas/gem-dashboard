@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import { HistoryRecord } from "@/lib/api";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-export function HistoryTable({ data, labels }: { data: HistoryRecord[], labels: any }) {
+export const HistoryTable = memo(function HistoryTable({ data, labels }: { data: HistoryRecord[], labels: any }) {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
@@ -87,4 +87,4 @@ export function HistoryTable({ data, labels }: { data: HistoryRecord[], labels: 
             )}
         </div>
     );
-}
+});

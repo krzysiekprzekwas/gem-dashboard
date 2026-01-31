@@ -35,8 +35,11 @@ export async function fetchMomentumData(region: string = "US"): Promise<Momentum
     return response.json();
 }
 
-export async function fetchHistory(region: string = "US"): Promise<HistoryRecord[]> {
-    const response = await fetch(`${API_BASE}/history?region=${region}`);
+export async function fetchHistory(region: string = "US", limit?: number): Promise<HistoryRecord[]> {
+    const url = limit 
+        ? `${API_BASE}/history?region=${region}&limit=${limit}`
+        : `${API_BASE}/history?region=${region}`;
+    const response = await fetch(url);
     if (!response.ok) throw new Error("Failed to fetch history");
     return response.json();
 }
