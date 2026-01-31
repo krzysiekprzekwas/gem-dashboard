@@ -225,6 +225,26 @@ Vercel automatically:
 
 ---
 
+## 📊 Analytics & Monitoring
+
+The dashboard includes **Vercel Analytics** and **Vercel Speed Insights** for production monitoring.
+
+### Features
+- 📈 Page views and visitor tracking
+- ⚡ Core Web Vitals (LCP, FID, CLS, TTFB)
+- 🌍 Geographic and device breakdown
+- 🚀 Real User Monitoring (RUM)
+- 🔒 Privacy-friendly (no cookies, GDPR compliant)
+
+### Viewing Data
+1. Go to your project on [Vercel](https://vercel.com)
+2. Click **Analytics** tab for Web Analytics
+3. Click **Speed Insights** tab for performance data
+
+**Note:** Analytics are automatically enabled on Vercel deployments and disabled in local development.
+
+---
+
 ## 🔧 Configuration
 
 ### Momentum Calculation

@@ -220,6 +220,19 @@ except Exception as e:
 
 ---
 
+## Analytics & Monitoring
+
+**Vercel Analytics & Speed Insights** are integrated in `app/layout.tsx`:
+- **Packages**: `@vercel/analytics` and `@vercel/speed-insights`
+- **Auto-enabled**: Works automatically on Vercel (no config needed)
+- **Development**: Disabled by default in local dev
+- **Privacy**: No cookies, GDPR compliant
+- **Access**: Vercel Dashboard → Analytics & Speed Insights tabs
+
+**Tracks**: Page views, Core Web Vitals (LCP, FID, CLS), performance by device/region
+
+---
+
 ## File Locations Reference
 
 ```
