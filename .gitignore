@@ -39,3 +39,39 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+venv/
+env/
+ENV/
+*.pyc
+
+# Database files
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Python IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.pytype/
+.dmypy.json
+dmypy.json
+
+# Python testing
+.pytest_cache/
+.coverage
+htmlcov/
