@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "GEM Dashboard - Global Equity Momentum Strategy Tracker",
-  description: "Track Global Equity Momentum (GEM) investment signals in real-time. Monitor momentum scores for US and EU markets with historical analysis and allocation insights.",
+  description: "Track Global Equity Momentum (GEM) investment signals in real-time. Momentum scores for US and EU markets with historical analysis and allocation insights.",
   keywords: ["GEM", "Global Equity Momentum", "investment strategy", "momentum investing", "SPY", "VEU", "BND", "portfolio allocation"],
   authors: [{ name: "Krzysztof Przekwas" }],
   creator: "Krzysztof Przekwas",
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     url: "/",
     siteName: "GEM Dashboard",
     title: "GEM Dashboard - Global Equity Momentum Strategy Tracker",
-    description: "Track Global Equity Momentum (GEM) investment signals in real-time. Monitor momentum scores for US and EU markets with historical analysis and allocation insights.",
+    description: "Track Global Equity Momentum (GEM) investment signals in real-time. Momentum scores for US and EU markets with historical analysis and allocation insights.",
     images: [
       {
         url: "/og.png",
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "GEM Dashboard - Global Equity Momentum Strategy Tracker",
-    description: "Track Global Equity Momentum (GEM) investment signals in real-time. Monitor momentum scores for US and EU markets.",
+    description: "Track Global Equity Momentum (GEM) investment signals in real-time. Momentum scores for US and EU markets with historical analysis and allocation insights.",
     images: ["/og.png"],
     creator: "@krzysiekprzekw1",
   },
