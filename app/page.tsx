@@ -469,7 +469,7 @@ export default function Home() {
           <div className="md:col-span-2 pt-8">
             <h2 className="text-2xl font-bold tracking-tighter text-foreground mb-4">{t('history.title')}</h2>
 
-            <AllocationChanges data={history} />
+            <AllocationChanges region={region} />
 
             <Card className="bg-card border-border overflow-hidden">
               <CardHeader>

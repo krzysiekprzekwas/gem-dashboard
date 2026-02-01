@@ -26,6 +26,16 @@ export interface HistoryRecord {
     signal: string;
 }
 
+export interface AllocationChangesData {
+    has_history: boolean;
+    current_signal?: string;
+    days_since_change?: number;
+    last_change_date?: string;
+    previous_signal?: string;
+    previous_signal_duration_days?: number;
+    no_change_in_history?: boolean;
+}
+
 // In Vercel (Production), use relative path to route via rewrites.
 // In Development, use localhost:8000 IF running separate backend, 
 // OR use relative if using Next.js rewrites in next.config.ts (preferred).
@@ -88,6 +98,26 @@ export function useHistoryData(region: string, limit: number) {
         data: data || [],
         isLoading,
         error: error ? "Failed to fetch history" : null
+    };
+}
+
+export function useAllocationChanges(region: string) {
+    const url = `${API_BASE}/allocation-changes?region=${region}`;
+    const { data, error, isLoading } = useSWR<AllocationChangesData>(
+        url,
+        fetcher,
+        {
+            refreshInterval: 60000, // Auto-refresh every 60 seconds
+            revalidateOnFocus: false,
+            dedupingInterval: 5000,
+            keepPreviousData: true, // Prevent UI blink during region changes
+        }
+    );
+    
+    return {
+        data,
+        isLoading,
+        error: error ? "Failed to fetch allocation changes" : null
     };
 }
 

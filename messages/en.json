@@ -85,7 +85,9 @@
     "stableSinceShift": "Stable since shift",
     "durationOfSignal": "Duration of {signal} signal",
     "occurredOn": "Occurred on {date}",
-    "stableHistory": "Signal has been stable as {signal} for the entire available history ({days} days)."
+    "stableHistory": "Signal has been stable as {signal} for the entire available history ({days} days).",
+    "noHistory": "No allocation history available yet.",
+    "loadingError": "Failed to load allocation change data."
   },
   "historyTable": {
     "date": "Date",

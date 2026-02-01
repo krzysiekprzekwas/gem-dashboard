@@ -85,7 +85,9 @@
     "stableSinceShift": "Stabilny od zmiany",
     "durationOfSignal": "Czas trwania sygnału {signal}",
     "occurredOn": "Wystąpiła {date}",
-    "stableHistory": "Sygnał był stabilny jako {signal} dla całej dostępnej historii ({days} dni)."
+    "stableHistory": "Sygnał był stabilny jako {signal} dla całej dostępnej historii ({days} dni).",
+    "noHistory": "Brak historii alokacji.",
+    "loadingError": "Nie udało się załadować danych o zmianach alokacji."
   },
   "historyTable": {
     "date": "Data",

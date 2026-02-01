@@ -3,10 +3,10 @@ import os
 from fastapi.middleware.cors import CORSMiddleware
 try:
     from .momentum import fetch_momentum_data
-    from .database import create_db_and_tables, save_momentum_record, get_history
+    from .database import create_db_and_tables, save_momentum_record, get_history, get_latest_signal_change
 except ImportError:
     from momentum import fetch_momentum_data
-    from database import create_db_and_tables, save_momentum_record, get_history
+    from database import create_db_and_tables, save_momentum_record, get_history, get_latest_signal_change
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -97,6 +97,24 @@ def read_history(region: str = "US", limit: int = 100):
         limit: Maximum number of records to return (default 100)
     """
     return get_history(region=region, limit=limit)
+
+@app.get("/api/allocation-changes")
+def get_allocation_changes(region: str = "US"):
+    """
+    Get allocation change analysis for a specific region.
+    
+    Returns information about the most recent signal change,
+    independent of any date range filtering.
+    
+    Args:
+        region: Market region (US or EU)
+    """
+    try:
+        result = get_latest_signal_change(region=region)
+        return result
+    except Exception as e:
+        logger.error(f"Error fetching allocation changes for {region}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/cron-update")
 def cron_update(background_tasks: BackgroundTasks, auth_header: str | None = Header(default=None, alias="Authorization")):
