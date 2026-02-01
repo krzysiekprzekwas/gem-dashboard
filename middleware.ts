@@ -1,16 +1,12 @@
-import createMiddleware from 'next-intl/middleware';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-const intlMiddleware = createMiddleware({
-  locales: ['en', 'pl'],
-  defaultLocale: 'en',
-  localePrefix: 'never' // Don't add /en or /pl to URLs
-});
-
-export default function middleware(request: NextRequest) {
-  return intlMiddleware(request);
+export function middleware(request: NextRequest) {
+  // Pass through all requests without modification
+  // Locale handling is done via cookies in i18n/request.ts
+  return NextResponse.next();
 }
 
 export const config = {
+  // Only run on app routes, exclude API and static files
   matcher: ['/((?!api|_next|_vercel|.*\\..*).*)']
 };
