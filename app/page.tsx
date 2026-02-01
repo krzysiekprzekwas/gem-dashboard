@@ -17,6 +17,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { ChevronDown, Settings, Globe } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { useTranslations, useLocale } from 'next-intl';
+import { useFormattedDate, useFormattedNumber } from "@/lib/i18n-utils";
 
 // Lazy load HistoryChart with Recharts library to reduce initial bundle size
 const HistoryChart = dynamic(
@@ -27,26 +29,13 @@ const HistoryChart = dynamic(
   }
 );
 
-// Helper functions moved outside component for performance
-// These don't depend on props/state, so they don't need to be recreated on every render
-const formatPercent = (val: number) => (val * 100).toFixed(2) + "%";
-const formatPrice = (val: number) => "$" + val.toFixed(2);
-
 const REGION_LABELS: Record<string, any> = {
   US: {
-    eq1: "US Stocks",
-    eq2: "Global ex-US",
-    bond: "Total Bonds",
-    threshold: "T-Bills",
     eq1_tick: "SPY",
     eq2_tick: "VEU",
     bond_tick: "BND",
   },
   EU: {
-    eq1: "S&P 500",
-    eq2: "World ex-US",
-    bond: "Global Bonds",
-    threshold: "Euro Cash",
     eq1_tick: "CSPX.AS",
     eq2_tick: "EXUS.L",
     bond_tick: "AGGH.AS",
@@ -54,17 +43,26 @@ const REGION_LABELS: Record<string, any> = {
 };
 
 export default function Home() {
+  const t = useTranslations();
+  const locale = useLocale();
+  const formatDate = useFormattedDate();
+  const { percent, currency } = useFormattedNumber();
+
   const [statusOpen, setStatusOpen] = useState(false);
   const [strategyOpen, setStrategyOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
 
   const [region, setRegion] = useState<string>("US");
+  const [language, setLanguage] = useState<string>(locale);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [historyRange, setHistoryRange] = useState<"3m" | "1y" | "max">("1y");
 
   useEffect(() => {
     const savedRegion = localStorage.getItem("gem-region");
     if (savedRegion) setRegion(savedRegion);
+
+    const savedLang = localStorage.getItem("gem-language");
+    if (savedLang) setLanguage(savedLang);
   }, []);
 
   // Calculate appropriate limit based on selected range
@@ -81,13 +79,26 @@ export default function Home() {
   const handleRegionChange = (newRegion: string) => {
     setRegion(newRegion);
     localStorage.setItem("gem-region", newRegion);
-    setSettingsOpen(false);
   };
 
-  const labels = REGION_LABELS[region] || REGION_LABELS.US;
+  const handleLanguageChange = (newLang: string) => {
+    setLanguage(newLang);
+    localStorage.setItem("gem-language", newLang);
+    document.cookie = `NEXT_LOCALE=${newLang}; path=/; max-age=31536000`;
+    // Refresh to apply new locale
+    window.location.reload();
+  };
 
-  // No client-side filtering needed - backend provides correctly limited data via the limit parameter
-  // This prevents double filtering and eliminates the "blink" effect when switching ranges
+  // Get region labels from translations
+  const labels = {
+    eq1: t(`regions.${region}.eq1`),
+    eq2: t(`regions.${region}.eq2`),
+    bond: t(`regions.${region}.bond`),
+    threshold: t(`regions.${region}.threshold`),
+    eq1_tick: REGION_LABELS[region].eq1_tick,
+    eq2_tick: REGION_LABELS[region].eq2_tick,
+    bond_tick: REGION_LABELS[region].bond_tick,
+  };
 
   const getSignalColor = (signal: string) => {
     if (signal === labels.eq1_tick) return "bg-green-600 hover:bg-green-700";
@@ -98,21 +109,45 @@ export default function Home() {
   const getSignalInterpretation = (signal: string, momentum: any) => {
     if (!momentum) return "";
 
-    const eq1Mom = momentum[labels.eq1_tick] || 0;
-    const eq2Mom = momentum[labels.eq2_tick] || 0;
-    const bondMom = momentum[labels.bond_tick] || 0;
-    const thresholdMom = momentum.THRESHOLD || 0;
+    const eq1Mom = percent(momentum[labels.eq1_tick] || 0);
+    const eq2Mom = percent(momentum[labels.eq2_tick] || 0);
+    const bondMom = percent(momentum[labels.bond_tick] || 0);
+    const thresholdMom = percent(momentum.THRESHOLD || 0);
 
     if (signal === labels.eq1_tick) {
-      return `${labels.eq1} (${formatPercent(eq1Mom)}) outperform both international stocks (${formatPercent(eq2Mom)}) and ${labels.threshold} (${formatPercent(thresholdMom)}). The strategy allocates 100% to this asset for maximum growth potential.`;
+      return t('allocation.interpretationEq1', {
+        eq1: labels.eq1,
+        eq1Mom,
+        eq2Mom,
+        threshold: labels.threshold,
+        thresholdMom
+      });
     } else if (signal === labels.eq2_tick) {
-      return `${labels.eq2} (${formatPercent(eq2Mom)}) demonstrate superior momentum compared to ${labels.eq1} (${formatPercent(eq1Mom)}) and exceed the ${labels.threshold} threshold (${formatPercent(thresholdMom)}). The strategy rotates for optimal returns.`;
+      return t('allocation.interpretationEq2', {
+        eq2: labels.eq2,
+        eq2Mom,
+        eq1: labels.eq1,
+        eq1Mom,
+        threshold: labels.threshold,
+        thresholdMom
+      });
     } else if (signal === labels.bond_tick || signal === "BND" || signal === "AGGH.AS") {
-      const thresholdRef = `${labels.threshold} (${formatPercent(thresholdMom)})`;
-      if (eq1Mom < thresholdMom && eq2Mom < thresholdMom) {
-        return `Neither ${labels.eq1} (${formatPercent(eq1Mom)}) nor ${labels.eq2} (${formatPercent(eq2Mom)}) exceed the ${thresholdRef} threshold. The strategy moves to bonds (${formatPercent(bondMom)}) for capital preservation.`;
+      const rawEq1Mom = momentum[labels.eq1_tick] || 0;
+      const rawEq2Mom = momentum[labels.eq2_tick] || 0;
+      const rawThresholdMom = momentum.THRESHOLD || 0;
+      
+      if (rawEq1Mom < rawThresholdMom && rawEq2Mom < rawThresholdMom) {
+        return t('allocation.interpretationBondBoth', {
+          eq1: labels.eq1,
+          eq1Mom,
+          eq2: labels.eq2,
+          eq2Mom,
+          threshold: labels.threshold,
+          thresholdMom,
+          bondMom
+        });
       } else {
-        return `Equity momentum does not sufficiently exceed the risk-free rate. The strategy defensively positions in bonds (${formatPercent(bondMom)}) to protect capital.`;
+        return t('allocation.interpretationBondDefensive', { bondMom });
       }
     }
     return "";
@@ -123,8 +158,8 @@ export default function Home() {
       <div className="max-w-4xl mx-auto space-y-8">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-border pb-4 gap-4 md:gap-0">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tighter text-foreground">GEM DASHBOARD</h1>
-            <p className="text-xs md:text-sm text-muted-foreground">Global Equity Momentum • {region} Strategy</p>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tighter text-foreground">{t('header.title')}</h1>
+            <p className="text-xs md:text-sm text-muted-foreground">{t('header.subtitle', { region })}</p>
           </div>
           <div className="flex items-center gap-3 self-end md:self-auto">
             <ThemeToggle />
@@ -138,30 +173,56 @@ export default function Home() {
               >
                 <Settings className="w-4 h-4" />
               </Button>
-              <DialogContent className="max-w-xs">
+              <DialogContent className="max-w-md">
                 <DialogHeader>
-                  <DialogTitle>Regional Settings</DialogTitle>
-                  <DialogDescription>
-                    Choose your investment region
-                  </DialogDescription>
+                  <DialogTitle>{t('settings.title')}</DialogTitle>
                 </DialogHeader>
-                <div className="py-4">
-                  <RadioGroup value={region} onValueChange={handleRegionChange} className="space-y-4">
-                    <div className="flex items-center space-x-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                      <RadioGroupItem value="US" id="us" />
-                      <Label htmlFor="us" className="flex-1 cursor-pointer">
-                        <div className="font-semibold">United States</div>
-                        <div className="text-xs text-muted-foreground">SPY, VEU, BND, ^IRX</div>
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                      <RadioGroupItem value="EU" id="eu" />
-                      <Label htmlFor="eu" className="flex-1 cursor-pointer">
-                        <div className="font-semibold">Europe (UCITS)</div>
-                        <div className="text-xs text-muted-foreground">CSPX, EXUS, AGGH, PJEU</div>
-                      </Label>
-                    </div>
-                  </RadioGroup>
+                <div className="space-y-6 py-4">
+                  {/* Region Selection */}
+                  <div>
+                    <h3 className="text-sm font-semibold mb-2">{t('settings.regional')}</h3>
+                    <p className="text-xs text-muted-foreground mb-3">{t('settings.regionalDescription')}</p>
+                    <RadioGroup value={region} onValueChange={handleRegionChange} className="space-y-3">
+                      <div className="flex items-center space-x-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                        <RadioGroupItem value="US" id="us" />
+                        <Label htmlFor="us" className="flex-1 cursor-pointer">
+                          <div className="font-semibold">{t('settings.unitedStates')}</div>
+                          <div className="text-xs text-muted-foreground">SPY, VEU, BND, ^IRX</div>
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                        <RadioGroupItem value="EU" id="eu" />
+                        <Label htmlFor="eu" className="flex-1 cursor-pointer">
+                          <div className="font-semibold">{t('settings.europe')}</div>
+                          <div className="text-xs text-muted-foreground">CSPX, EXUS, AGGH, PJEU</div>
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  <Separator />
+
+                  {/* Language Selection */}
+                  <div>
+                    <h3 className="text-sm font-semibold mb-2">{t('settings.language')}</h3>
+                    <p className="text-xs text-muted-foreground mb-3">{t('settings.languageDescription')}</p>
+                    <RadioGroup value={language} onValueChange={handleLanguageChange} className="space-y-3">
+                      <div className="flex items-center space-x-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                        <RadioGroupItem value="en" id="lang-en" />
+                        <Label htmlFor="lang-en" className="flex-1 cursor-pointer">
+                          <div className="font-semibold">English</div>
+                          <div className="text-xs text-muted-foreground">International</div>
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                        <RadioGroupItem value="pl" id="lang-pl" />
+                        <Label htmlFor="lang-pl" className="flex-1 cursor-pointer">
+                          <div className="font-semibold">Polski</div>
+                          <div className="text-xs text-muted-foreground">Polska</div>
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
                 </div>
               </DialogContent>
             </Dialog>
@@ -172,36 +233,36 @@ export default function Home() {
                 className="text-muted-foreground border-border cursor-pointer hover:bg-accent"
                 onClick={() => setStatusOpen(true)}
               >
-                {loading ? "CONNECTING..." : "LIVE"}
+                {loading ? t('common.loading') : t('common.live')}
               </Badge>
 
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle className="text-foreground">System Status</DialogTitle>
+                  <DialogTitle className="text-foreground">{t('status.title')}</DialogTitle>
                   <DialogDescription className="text-muted-foreground">
-                    Real-time monitoring and data source information
+                    {t('status.description')}
                   </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4 mt-4">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Last Updated</span>
+                    <span className="text-muted-foreground">{t('status.lastUpdated')}</span>
                     <span className="text-foreground font-mono">
-                      {data ? new Date(data.last_updated).toLocaleTimeString() : "--:--:--"}
+                      {data ? new Date(data.last_updated).toLocaleTimeString(locale) : "--:--:--"}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Data Source</span>
-                    <span className="text-foreground">Yahoo Finance</span>
+                    <span className="text-muted-foreground">{t('status.dataSource')}</span>
+                    <span className="text-foreground">{t('status.yahooFinance')}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Update Frequency</span>
-                    <span className="text-foreground">Every 60 seconds</span>
+                    <span className="text-muted-foreground">{t('status.updateFrequency')}</span>
+                    <span className="text-foreground">{t('status.everyMinute')}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Connection Status</span>
+                    <span className="text-muted-foreground">{t('status.connectionStatus')}</span>
                     <span className={error ? "text-destructive" : "text-green-500"}>
-                      {error ? "Disconnected" : "Connected"}
+                      {error ? t('common.disconnected') : t('common.connected')}
                     </span>
                   </div>
                 </div>
@@ -218,10 +279,10 @@ export default function Home() {
                 <div className="flex items-center justify-between">
                   <div className="text-left">
                     <CardTitle className="text-foreground text-lg flex items-center gap-2">
-                      📚 About the GEM Strategy
+                      📚 {t('strategy.title')}
                     </CardTitle>
                     <CardDescription className="text-muted-foreground">
-                      Understanding Global Equity Momentum investing
+                      {t('strategy.subtitle')}
                     </CardDescription>
                   </div>
                   <ChevronDown
@@ -235,29 +296,39 @@ export default function Home() {
             <CollapsibleContent>
               <CardContent className="space-y-4 text-sm pt-0">
                 <div>
-                  <h3 className="font-semibold text-foreground mb-2">What is GEM?</h3>
+                  <h3 className="font-semibold text-foreground mb-2">{t('strategy.whatIsTitle')}</h3>
                   <p className="text-muted-foreground leading-relaxed">
-                    Global Equity Momentum (GEM) is a systematic investment strategy that rotates between {labels.eq1},
-                    {labels.eq2}, and {labels.bond} based on 12-month momentum. The strategy selects the
-                    best-performing equity asset if its momentum exceeds the {labels.threshold}; otherwise, it allocates to bonds for downside protection.
+                    {t('strategy.whatIsDescription', {
+                      eq1: labels.eq1,
+                      eq2: labels.eq2,
+                      bond: labels.bond,
+                      threshold: labels.threshold
+                    })}
                   </p>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-foreground mb-2">How it Works</h3>
+                  <h3 className="font-semibold text-foreground mb-2">{t('strategy.howItWorksTitle')}</h3>
                   <ul className="list-disc list-inside text-muted-foreground space-y-1 leading-relaxed">
-                    <li>Calculate 12-month total return for {labels.eq1_tick}, {labels.eq2_tick}, and {labels.threshold}</li>
-                    <li>Select the equity asset with higher momentum</li>
-                    <li>If selected equity exceeds {labels.threshold} returns, allocate 100% to that equity</li>
-                    <li>Otherwise, move to {labels.bond} ({labels.bond_tick}) for capital preservation</li>
-                    <li>Rebalance monthly based on updated momentum signals</li>
+                    <li>{t('strategy.howItWorksStep1', {
+                      eq1Tick: labels.eq1_tick,
+                      eq2Tick: labels.eq2_tick,
+                      threshold: labels.threshold
+                    })}</li>
+                    <li>{t('strategy.howItWorksStep2')}</li>
+                    <li>{t('strategy.howItWorksStep3', { threshold: labels.threshold })}</li>
+                    <li>{t('strategy.howItWorksStep4', {
+                      bond: labels.bond,
+                      bondTick: labels.bond_tick
+                    })}</li>
+                    <li>{t('strategy.howItWorksStep5')}</li>
                   </ul>
                 </div>
 
                 <Separator className="bg-border" />
 
                 <div>
-                  <h3 className="font-semibold text-foreground mb-2">External Resources</h3>
+                  <h3 className="font-semibold text-foreground mb-2">{t('strategy.externalResourcesTitle')}</h3>
                   <div className="grid md:grid-cols-2 gap-2">
                     <a
                       href="https://investresolve.com/global-equity-momentum-executive-summary/"
@@ -265,7 +336,7 @@ export default function Home() {
                       rel="noopener noreferrer"
                       className="text-blue-500 hover:text-blue-400 underline underline-offset-4 flex items-center gap-1"
                     >
-                      <span>Global Equity Momentum: A Craftsman’s Perspective</span>
+                      <span>{t('strategy.resourceCraftsman')}</span>
                       <span className="text-xs">↗</span>
                     </a>
                     <a
@@ -274,7 +345,7 @@ export default function Home() {
                       rel="noopener noreferrer"
                       className="text-blue-500 hover:text-blue-400 underline underline-offset-4 flex items-center gap-1"
                     >
-                      <span>Research Paper (Antonacci, 2014)</span>
+                      <span>{t('strategy.resourcePaper')}</span>
                       <span className="text-xs">↗</span>
                     </a>
                     <a
@@ -283,7 +354,7 @@ export default function Home() {
                       rel="noopener noreferrer"
                       className="text-blue-500 hover:text-blue-400 underline underline-offset-4 flex items-center gap-1"
                     >
-                      <span>Dual Momentum GEM</span>
+                      <span>{t('strategy.resourceDualMomentum')}</span>
                       <span className="text-xs">↗</span>
                     </a>
                   </div>
@@ -297,7 +368,7 @@ export default function Home() {
           {/* SIGNAL CARD - FULL WIDTH */}
           <Card className="md:col-span-2 border-border bg-card">
             <CardHeader>
-              <CardTitle className="text-muted-foreground text-sm uppercase tracking-wider">Current Allocation</CardTitle>
+              <CardTitle className="text-muted-foreground text-sm uppercase tracking-wider">{t('allocation.title')}</CardTitle>
             </CardHeader>
             <CardContent>
               {loading ? (
@@ -311,7 +382,7 @@ export default function Home() {
                       {data?.signal}
                     </Badge>
                     <div className="text-sm text-muted-foreground">
-                      Target Allocation
+                      {t('allocation.targetAllocation')}
                     </div>
                   </div>
 
@@ -319,7 +390,7 @@ export default function Home() {
                   {data && (
                     <div className="bg-muted/30 border border-border rounded-lg p-4">
                       <p className="text-sm text-foreground leading-relaxed">
-                        <span className="font-semibold">Strategy Rationale:</span> {getSignalInterpretation(data.signal, data.momentum)}
+                        <span className="font-semibold">{t('allocation.strategyRationale')}</span> {getSignalInterpretation(data.signal, data.momentum)}
                       </p>
                     </div>
                   )}
@@ -331,23 +402,23 @@ export default function Home() {
           {/* MOMENTUM TABLE */}
           <Card className="md:col-span-2 border-border bg-card overflow-hidden">
             <CardHeader>
-              <CardTitle className="text-muted-foreground text-sm uppercase tracking-wider">Momentum Analysis (12-Mo)</CardTitle>
-              <CardDescription className="text-muted-foreground">Assets ranked by 12-month return.</CardDescription>
+              <CardTitle className="text-muted-foreground text-sm uppercase tracking-wider">{t('momentum.title')}</CardTitle>
+              <CardDescription className="text-muted-foreground">{t('momentum.description')}</CardDescription>
             </CardHeader>
             <CardContent className="overflow-x-auto">
               <Table className="min-w-[600px] md:min-w-0">
                 <TableHeader>
                   <TableRow className="border-border hover:bg-transparent">
-                    <TableHead className="text-muted-foreground">Asset</TableHead>
-                    <TableHead className="text-muted-foreground">Name</TableHead>
-                    <TableHead className="text-right text-muted-foreground">Momentum</TableHead>
-                    <TableHead className="text-right text-muted-foreground">Current Price</TableHead>
+                    <TableHead className="text-muted-foreground">{t('momentum.asset')}</TableHead>
+                    <TableHead className="text-muted-foreground">{t('momentum.name')}</TableHead>
+                    <TableHead className="text-right text-muted-foreground">{t('momentum.momentum')}</TableHead>
+                    <TableHead className="text-right text-muted-foreground">{t('momentum.currentPrice')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">Loading market data...</TableCell>
+                      <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">{t('momentum.loadingMarketData')}</TableCell>
                     </TableRow>
                   ) : data ? (
                     [labels.eq1_tick, labels.eq2_tick, labels.bond_tick, "THRESHOLD"].sort((a, b) => {
@@ -369,7 +440,7 @@ export default function Home() {
                             {isThreshold ? labels.threshold : ticker}
                             {isCurrentSignal && (
                               <span className="ml-2 text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded">
-                                SELECTED
+                                {t('common.selected')}
                               </span>
                             )}
                           </TableCell>
@@ -380,10 +451,10 @@ export default function Home() {
                                   labels.threshold}
                           </TableCell>
                           <TableCell className={`text-right ${momentum > 0 ? "text-green-500" : "text-red-500"}`}>
-                            {formatPercent(momentum)}
+                            {percent(momentum)}
                           </TableCell>
                           <TableCell className="text-right text-foreground">
-                            {price && !isThreshold ? formatPrice(price) : "—"}
+                            {price && !isThreshold ? currency(price) : "—"}
                           </TableCell>
                         </TableRow>
                       );
@@ -396,7 +467,7 @@ export default function Home() {
 
           {/* HISTORY SECTION */}
           <div className="md:col-span-2 pt-8">
-            <h2 className="text-2xl font-bold tracking-tighter text-foreground mb-4">History Analysis</h2>
+            <h2 className="text-2xl font-bold tracking-tighter text-foreground mb-4">{t('history.title')}</h2>
 
             <AllocationChanges data={history} />
 
@@ -405,13 +476,13 @@ export default function Home() {
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                      <CardTitle className="text-muted-foreground text-sm uppercase tracking-wider">Signal History & Details</CardTitle>
+                      <CardTitle className="text-muted-foreground text-sm uppercase tracking-wider">{t('history.cardTitle')}</CardTitle>
                       <CardDescription className="text-muted-foreground text-xs md:text-sm">
-                        Chart and table show the same date range
+                        {t('history.cardDescription')}
                       </CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="flex rounded-lg border border-border p-0.5 bg-muted/30" role="tablist" aria-label="Date range">
+                      <div className="flex rounded-lg border border-border p-0.5 bg-muted/30" role="tablist" aria-label={t('history.dateRangeLabel')}>
                         {(["3m", "1y", "max"] as const).map((range) => (
                           <button
                             key={range}
@@ -425,7 +496,7 @@ export default function Home() {
                                 : "text-muted-foreground hover:text-foreground"
                             }`}
                           >
-                            {range === "3m" ? "3 months" : range === "1y" ? "1 year" : "Max"}
+                            {range === "3m" ? t('history.range3m') : range === "1y" ? t('history.range1y') : t('history.rangeMax')}
                           </button>
                         ))}
                       </div>
@@ -435,7 +506,7 @@ export default function Home() {
                         onClick={() => setHistoryOpen(!historyOpen)}
                         className="text-xs shrink-0"
                       >
-                        {historyOpen ? "Hide Table" : "Show Table"}
+                        {historyOpen ? t('history.hideTable') : t('history.showTable')}
                       </Button>
                     </div>
                   </div>
@@ -459,7 +530,7 @@ export default function Home() {
         <footer className="border-t border-border pt-8 mt-12">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
-              <span>Built by</span>
+              <span>{t('footer.builtBy')}</span>
               <a
                 href="https://kristof.pro"
                 target="_blank"
@@ -477,7 +548,7 @@ export default function Home() {
               className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-lg transition-all hover:scale-105 shadow-md"
             >
               <span className="text-xl">☕</span>
-              <span>Buy me a coffee</span>
+              <span>{t('footer.buyMeCoffee')}</span>
             </a>
           </div>
         </footer>

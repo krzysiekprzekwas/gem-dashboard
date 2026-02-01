@@ -5,12 +5,16 @@ import { HistoryRecord } from "@/lib/api";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useTranslations } from 'next-intl';
+import { useFormattedDate, useFormattedNumber } from "@/lib/i18n-utils";
 
 export const HistoryTable = memo(function HistoryTable({ data, labels }: { data: HistoryRecord[], labels: any }) {
+    const t = useTranslations('historyTable');
+    const formatDate = useFormattedDate();
+    const { percent } = useFormattedNumber();
+    
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
-
-    const formatPercent = (val: number) => (val * 100).toFixed(2) + "%";
 
     const totalPages = Math.ceil(data.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -22,8 +26,8 @@ export const HistoryTable = memo(function HistoryTable({ data, labels }: { data:
                 <Table className="min-w-[600px] md:min-w-0">
                 <TableHeader>
                     <TableRow className="border-border hover:bg-transparent text-xs">
-                        <TableHead className="text-muted-foreground">Date</TableHead>
-                        <TableHead className="text-muted-foreground">Signal</TableHead>
+                        <TableHead className="text-muted-foreground">{t('date')}</TableHead>
+                        <TableHead className="text-muted-foreground">{t('signal')}</TableHead>
                         <TableHead className="text-right text-muted-foreground">{labels.eq1_tick}</TableHead>
                         <TableHead className="text-right text-muted-foreground">{labels.eq2_tick}</TableHead>
                         <TableHead className="text-right text-muted-foreground">{labels.threshold}</TableHead>
@@ -34,24 +38,24 @@ export const HistoryTable = memo(function HistoryTable({ data, labels }: { data:
                     {currentData.map((record) => (
                         <TableRow key={record.id} className="border-border hover:bg-muted/50 text-xs">
                             <TableCell className="text-foreground font-mono">
-                                {new Date(record.date).toLocaleDateString()}
+                                {formatDate(new Date(record.date))}
                             </TableCell>
                             <TableCell className={`font-bold ${(record.signal === labels.eq1_tick || record.signal === 'SPY') ? 'text-green-500' :
                                 (record.signal === labels.eq2_tick || record.signal === 'VEU') ? 'text-blue-500' : 'text-yellow-500'
                                 }`}>
                                 {record.signal}
                             </TableCell>
-                            <TableCell className="text-right text-muted-foreground">{formatPercent(record.spy_mom)}</TableCell>
-                            <TableCell className="text-right text-muted-foreground">{formatPercent(record.veu_mom)}</TableCell>
+                            <TableCell className="text-right text-muted-foreground">{percent(record.spy_mom)}</TableCell>
+                            <TableCell className="text-right text-muted-foreground">{percent(record.veu_mom)}</TableCell>
                             <TableCell className="text-right text-muted-foreground">
-                                {record.tbill_mom !== undefined ? formatPercent(record.tbill_mom) : "—"}
+                                {record.tbill_mom !== undefined ? percent(record.tbill_mom) : "—"}
                             </TableCell>
-                            <TableCell className="text-right text-muted-foreground">{formatPercent(record.bnd_mom)}</TableCell>
+                            <TableCell className="text-right text-muted-foreground">{percent(record.bnd_mom)}</TableCell>
                         </TableRow>
                     ))}
                     {data.length === 0 && (
                         <TableRow>
-                            <TableCell colSpan={6} className="text-center text-muted-foreground h-24">No history available yet.</TableCell>
+                            <TableCell colSpan={6} className="text-center text-muted-foreground h-24">{t('noHistoryAvailable', { ns: 'history' })}</TableCell>
                         </TableRow>
                     )}
                 </TableBody>
@@ -61,7 +65,7 @@ export const HistoryTable = memo(function HistoryTable({ data, labels }: { data:
             {totalPages > 1 && (
                 <div className="flex items-center justify-between py-2">
                     <p className="text-xs text-muted-foreground">
-                        Page {currentPage} of {totalPages} ({data.length} records)
+                        {t('page', { current: currentPage, total: totalPages, records: data.length })}
                     </p>
                     <div className="flex items-center space-x-2">
                         <Button
@@ -72,7 +76,7 @@ export const HistoryTable = memo(function HistoryTable({ data, labels }: { data:
                             disabled={currentPage === 1}
                         >
                             <ChevronLeft className="h-4 w-4" />
-                            <span className="sr-only">Previous page</span>
+                            <span className="sr-only">{t('previousPage')}</span>
                         </Button>
                         <Button
                             variant="outline"
@@ -82,7 +86,7 @@ export const HistoryTable = memo(function HistoryTable({ data, labels }: { data:
                             disabled={currentPage === totalPages}
                         >
                             <ChevronRight className="h-4 w-4" />
-                            <span className="sr-only">Next page</span>
+                            <span className="sr-only">{t('nextPage')}</span>
                         </Button>
                     </div>
                 </div>

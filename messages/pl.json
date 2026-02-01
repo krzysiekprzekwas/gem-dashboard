@@ -1,0 +1,115 @@
+{
+  "common": {
+    "loading": "ŁĄCZENIE...",
+    "live": "NA ŻYWO",
+    "connected": "Połączono",
+    "disconnected": "Rozłączono",
+    "selected": "WYBRANO"
+  },
+  "header": {
+    "title": "PANEL GEM",
+    "subtitle": "Globalny Momentum Akcji • Strategia {region}"
+  },
+  "settings": {
+    "title": "Ustawienia",
+    "regional": "Ustawienia Regionalne",
+    "regionalDescription": "Wybierz swój region inwestycyjny",
+    "language": "Język",
+    "languageDescription": "Wybierz język wyświetlania",
+    "unitedStates": "Stany Zjednoczone",
+    "europe": "Europa (UCITS)"
+  },
+  "status": {
+    "title": "Status Systemu",
+    "description": "Monitorowanie w czasie rzeczywistym i źródła danych",
+    "lastUpdated": "Ostatnia Aktualizacja",
+    "dataSource": "Źródło Danych",
+    "updateFrequency": "Częstotliwość Aktualizacji",
+    "connectionStatus": "Status Połączenia",
+    "everyMinute": "Co 60 sekund",
+    "yahooFinance": "Yahoo Finance"
+  },
+  "strategy": {
+    "title": "O Strategii GEM",
+    "subtitle": "Zrozumienie inwestowania w Globalny Momentum Akcji",
+    "whatIsTitle": "Czym jest GEM?",
+    "whatIsDescription": "Global Equity Momentum (GEM) to systematyczna strategia inwestycyjna, która rotuje między {eq1}, {eq2} i {bond} na podstawie 12-miesięcznego momentum. Strategia wybiera najlepiej działający składnik akcyjny, jeśli jego momentum przekracza {threshold}; w przeciwnym razie alokuje do obligacji dla ochrony kapitału.",
+    "howItWorksTitle": "Jak to Działa",
+    "howItWorksStep1": "Oblicz 12-miesięczny całkowity zwrot dla {eq1Tick}, {eq2Tick} i {threshold}",
+    "howItWorksStep2": "Wybierz składnik akcyjny z wyższym momentum",
+    "howItWorksStep3": "Jeśli wybrany składnik akcyjny przekracza zwroty {threshold}, alokuj 100% do tego składnika",
+    "howItWorksStep4": "W przeciwnym razie przejdź do {bond} ({bondTick}) dla zachowania kapitału",
+    "howItWorksStep5": "Rebalansuj miesięcznie na podstawie zaktualizowanych sygnałów momentum",
+    "externalResourcesTitle": "Zasoby Zewnętrzne",
+    "resourceCraftsman": "Global Equity Momentum: Perspektywa Rzemieślnika",
+    "resourcePaper": "Artykuł Badawczy (Antonacci, 2014)",
+    "resourceDualMomentum": "Podwójne Momentum GEM"
+  },
+  "allocation": {
+    "title": "Bieżąca Alokacja",
+    "targetAllocation": "Docelowa Alokacja",
+    "strategyRationale": "Uzasadnienie Strategii:",
+    "interpretationEq1": "{eq1} ({eq1Mom}) przewyższają zarówno akcje międzynarodowe ({eq2Mom}), jak i {threshold} ({thresholdMom}). Strategia alokuje 100% do tego składnika dla maksymalnego potencjału wzrostu.",
+    "interpretationEq2": "{eq2} ({eq2Mom}) wykazują lepsze momentum w porównaniu do {eq1} ({eq1Mom}) i przekraczają próg {threshold} ({thresholdMom}). Strategia rotuje dla optymalnych zwrotów.",
+    "interpretationBondBoth": "Ani {eq1} ({eq1Mom}), ani {eq2} ({eq2Mom}) nie przekraczają progu {threshold} ({thresholdMom}). Strategia przechodzi do obligacji ({bondMom}) dla zachowania kapitału.",
+    "interpretationBondDefensive": "Momentum akcji nie przekracza wystarczająco stopy wolnej od ryzyka. Strategia defensywnie pozycjonuje się w obligacjach ({bondMom}) aby chronić kapitał."
+  },
+  "momentum": {
+    "title": "Analiza Momentum (12 mies.)",
+    "description": "Składniki uszeregowane według 12-miesięcznego zwrotu.",
+    "asset": "Składnik",
+    "name": "Nazwa",
+    "momentum": "Momentum",
+    "currentPrice": "Aktualna Cena",
+    "loadingMarketData": "Ładowanie danych rynkowych..."
+  },
+  "history": {
+    "title": "Analiza Historyczna",
+    "cardTitle": "Historia Sygnałów i Szczegóły",
+    "cardDescription": "Wykres i tabela pokazują ten sam zakres dat",
+    "range3m": "3 miesiące",
+    "range1y": "1 rok",
+    "rangeMax": "Maks.",
+    "showTable": "Pokaż Tabelę",
+    "hideTable": "Ukryj Tabelę",
+    "noHistoryAvailable": "Brak dostępnej historii.",
+    "dateRangeLabel": "Zakres dat"
+  },
+  "allocationChanges": {
+    "title": "Zmiany Alokacji",
+    "description": "Analiza stabilności trendu",
+    "latestShift": "Ostatnia Zmiana",
+    "currentTrend": "Bieżący Trend",
+    "previousDuration": "Poprzedni Okres",
+    "days": "Dni",
+    "stableSinceShift": "Stabilny od zmiany",
+    "durationOfSignal": "Czas trwania sygnału {signal}",
+    "occurredOn": "Wystąpiła {date}",
+    "stableHistory": "Sygnał był stabilny jako {signal} dla całej dostępnej historii ({days} dni)."
+  },
+  "historyTable": {
+    "date": "Data",
+    "signal": "Sygnał",
+    "page": "Strona {current} z {total} ({records} rekordów)",
+    "previousPage": "Poprzednia strona",
+    "nextPage": "Następna strona"
+  },
+  "footer": {
+    "builtBy": "Zbudowane przez",
+    "buyMeCoffee": "Postaw mi kawę"
+  },
+  "regions": {
+    "US": {
+      "eq1": "Akcje USA",
+      "eq2": "Globalne bez USA",
+      "bond": "Obligacje Ogółem",
+      "threshold": "Bony Skarbowe"
+    },
+    "EU": {
+      "eq1": "S&P 500",
+      "eq2": "Światowe bez USA",
+      "bond": "Obligacje Globalne",
+      "threshold": "Gotówka Euro"
+    }
+  }
+}

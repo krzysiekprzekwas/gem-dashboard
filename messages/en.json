@@ -1,0 +1,115 @@
+{
+  "common": {
+    "loading": "CONNECTING...",
+    "live": "LIVE",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "selected": "SELECTED"
+  },
+  "header": {
+    "title": "GEM DASHBOARD",
+    "subtitle": "Global Equity Momentum • {region} Strategy"
+  },
+  "settings": {
+    "title": "Settings",
+    "regional": "Regional Settings",
+    "regionalDescription": "Choose your investment region",
+    "language": "Language",
+    "languageDescription": "Choose your display language",
+    "unitedStates": "United States",
+    "europe": "Europe (UCITS)"
+  },
+  "status": {
+    "title": "System Status",
+    "description": "Real-time monitoring and data source information",
+    "lastUpdated": "Last Updated",
+    "dataSource": "Data Source",
+    "updateFrequency": "Update Frequency",
+    "connectionStatus": "Connection Status",
+    "everyMinute": "Every 60 seconds",
+    "yahooFinance": "Yahoo Finance"
+  },
+  "strategy": {
+    "title": "About the GEM Strategy",
+    "subtitle": "Understanding Global Equity Momentum investing",
+    "whatIsTitle": "What is GEM?",
+    "whatIsDescription": "Global Equity Momentum (GEM) is a systematic investment strategy that rotates between {eq1}, {eq2}, and {bond} based on 12-month momentum. The strategy selects the best-performing equity asset if its momentum exceeds the {threshold}; otherwise, it allocates to bonds for downside protection.",
+    "howItWorksTitle": "How it Works",
+    "howItWorksStep1": "Calculate 12-month total return for {eq1Tick}, {eq2Tick}, and {threshold}",
+    "howItWorksStep2": "Select the equity asset with higher momentum",
+    "howItWorksStep3": "If selected equity exceeds {threshold} returns, allocate 100% to that equity",
+    "howItWorksStep4": "Otherwise, move to {bond} ({bondTick}) for capital preservation",
+    "howItWorksStep5": "Rebalance monthly based on updated momentum signals",
+    "externalResourcesTitle": "External Resources",
+    "resourceCraftsman": "Global Equity Momentum: A Craftsman's Perspective",
+    "resourcePaper": "Research Paper (Antonacci, 2014)",
+    "resourceDualMomentum": "Dual Momentum GEM"
+  },
+  "allocation": {
+    "title": "Current Allocation",
+    "targetAllocation": "Target Allocation",
+    "strategyRationale": "Strategy Rationale:",
+    "interpretationEq1": "{eq1} ({eq1Mom}) outperform both international stocks ({eq2Mom}) and {threshold} ({thresholdMom}). The strategy allocates 100% to this asset for maximum growth potential.",
+    "interpretationEq2": "{eq2} ({eq2Mom}) demonstrate superior momentum compared to {eq1} ({eq1Mom}) and exceed the {threshold} threshold ({thresholdMom}). The strategy rotates for optimal returns.",
+    "interpretationBondBoth": "Neither {eq1} ({eq1Mom}) nor {eq2} ({eq2Mom}) exceed the {threshold} ({thresholdMom}) threshold. The strategy moves to bonds ({bondMom}) for capital preservation.",
+    "interpretationBondDefensive": "Equity momentum does not sufficiently exceed the risk-free rate. The strategy defensively positions in bonds ({bondMom}) to protect capital."
+  },
+  "momentum": {
+    "title": "Momentum Analysis (12-Mo)",
+    "description": "Assets ranked by 12-month return.",
+    "asset": "Asset",
+    "name": "Name",
+    "momentum": "Momentum",
+    "currentPrice": "Current Price",
+    "loadingMarketData": "Loading market data..."
+  },
+  "history": {
+    "title": "History Analysis",
+    "cardTitle": "Signal History & Details",
+    "cardDescription": "Chart and table show the same date range",
+    "range3m": "3 months",
+    "range1y": "1 year",
+    "rangeMax": "Max",
+    "showTable": "Show Table",
+    "hideTable": "Hide Table",
+    "noHistoryAvailable": "No history available yet.",
+    "dateRangeLabel": "Date range"
+  },
+  "allocationChanges": {
+    "title": "Allocation Changes",
+    "description": "Trend stability analysis",
+    "latestShift": "Latest Shift",
+    "currentTrend": "Current Trend",
+    "previousDuration": "Previous Duration",
+    "days": "Days",
+    "stableSinceShift": "Stable since shift",
+    "durationOfSignal": "Duration of {signal} signal",
+    "occurredOn": "Occurred on {date}",
+    "stableHistory": "Signal has been stable as {signal} for the entire available history ({days} days)."
+  },
+  "historyTable": {
+    "date": "Date",
+    "signal": "Signal",
+    "page": "Page {current} of {total} ({records} records)",
+    "previousPage": "Previous page",
+    "nextPage": "Next page"
+  },
+  "footer": {
+    "builtBy": "Built by",
+    "buyMeCoffee": "Buy me a coffee"
+  },
+  "regions": {
+    "US": {
+      "eq1": "US Stocks",
+      "eq2": "Global ex-US",
+      "bond": "Total Bonds",
+      "threshold": "T-Bills"
+    },
+    "EU": {
+      "eq1": "S&P 500",
+      "eq2": "World ex-US",
+      "bond": "Global Bonds",
+      "threshold": "Euro Cash"
+    }
+  }
+}
