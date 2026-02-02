@@ -3,7 +3,7 @@ import os
 from fastapi.middleware.cors import CORSMiddleware
 
 try:
-    from .momentum import fetch_momentum_data
+    from .momentum import fetch_momentum_data, REGION_CONFIGS
     from .database import (
         create_db_and_tables,
         save_momentum_record,
@@ -11,7 +11,7 @@ try:
         get_latest_signal_change,
     )
 except ImportError:
-    from momentum import fetch_momentum_data
+    from momentum import fetch_momentum_data, REGION_CONFIGS
     from database import (
         create_db_and_tables,
         save_momentum_record,
@@ -44,8 +44,6 @@ def update_momentum_history():
             # Extract tickers for the region to mapping to spy_mom, veu_mom etc
             # This is a bit tricky because the DB schema is fixed with spy_mom, veu_mom
             # We'll map Eq1 -> spy, Eq2 -> veu, Bond -> bnd, Threshold -> tbill
-            from momentum import REGION_CONFIGS
-
             config = REGION_CONFIGS[region]
 
             record = save_momentum_record(
