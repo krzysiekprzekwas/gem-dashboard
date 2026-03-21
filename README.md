@@ -336,7 +336,7 @@ This project is open source and available for personal and educational use.
 
 If you find this project helpful, consider supporting:
 
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support-yellow?style=for-the-badge&logo=buy-me-a-coffee)](https://buymeacoffee.com/kristof.pro)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support-yellow?style=for-the-badge&logo=buy-me-a-coffee)](https://suppi.pl/kristof-pro)
 
 ---
 

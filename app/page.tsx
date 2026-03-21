@@ -542,7 +542,7 @@ export default function Home() {
             </div>
 
             <a
-              href="https://buymeacoffee.com/kristof.pro"
+              href="https://suppi.pl/kristof-pro"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-lg transition-all hover:scale-105 shadow-md"
