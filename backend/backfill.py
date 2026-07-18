@@ -9,8 +9,8 @@ What it does:
   1. Renames legacy rows: region 'US' -> 'gem-us', 'EU' -> 'gem-eu' (same instruments/slots).
   2. Recomputes the `signal` of those rows with the canonical rule from their stored
      slot momenta (legacy rows used the pre-canonical variant).
-  3. Backfills `max-gem-eu` month-end history from 5y of prices (never tracked before):
-     computes 12-month (252 trading day) momentum per month-end and the argmax signal.
+  3. Backfills `max-gem-eu` daily history from 5y of prices (never tracked before):
+     computes 12-month (252 trading day) momentum for every trading day and the argmax signal.
 
 Idempotent: safe to re-run. Step 3 clears existing max-gem-eu rows first.
 """
@@ -70,20 +70,6 @@ def rename_and_recompute(session):
     return updated
 
 
-def month_end_indices(dates):
-    """Indices of the last trading day of each month in an ascending date list."""
-    out = []
-    for i in range(len(dates)):
-        last_of_month = (
-            i == len(dates) - 1
-            or dates[i].month != dates[i + 1].month
-            or dates[i].year != dates[i + 1].year
-        )
-        if last_of_month:
-            out.append(i)
-    return out
-
-
 def backfill_max_gem(session):
     sid = "max-gem-eu"
     config = STRATEGIES[sid]
@@ -105,7 +91,7 @@ def backfill_max_gem(session):
     ref_dates = [d for d, _ in ref]
 
     rows = []
-    for idx in month_end_indices(ref_dates):
+    for idx in range(len(ref_dates)):
         sample = ref_dates[idx]
         mom = {}
         ok = True
@@ -120,7 +106,7 @@ def backfill_max_gem(session):
             past = s[pos - LOOKBACK][1]
             mom[ticker] = 0.0 if past == 0 else (cur / past) - 1.0
         if not ok:
-            continue  # not enough history yet at this month-end
+            continue  # not enough history yet at this date
 
         rows.append(
             MomentumHistory(
@@ -135,7 +121,7 @@ def backfill_max_gem(session):
         )
 
     existing = session.exec(select(MomentumHistory).where(MomentumHistory.region == sid)).all()
-    print(f"  {sid}: {len(existing)} existing rows to clear, {len(rows)} month-end rows to insert")
+    print(f"  {sid}: {len(existing)} existing rows to clear, {len(rows)} daily rows to insert")
     if COMMIT:
         session.exec(delete(MomentumHistory).where(MomentumHistory.region == sid))
         for r in rows:
@@ -150,7 +136,7 @@ def main():
         changed = rename_and_recompute(session)
         print(f"     -> {changed} rows changed")
 
-        print("2/2 Backfill max-gem-eu month-end history:")
+        print("2/2 Backfill max-gem-eu daily history:")
         inserted = backfill_max_gem(session)
 
         if COMMIT:
