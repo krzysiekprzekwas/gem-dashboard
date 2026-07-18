@@ -73,8 +73,7 @@
     "asset": "Asset",
     "name": "Name",
     "momentum": "Momentum",
-    "currentPrice": "Current Price",
-    "loadingMarketData": "Loading market data..."
+    "currentPrice": "Current Price"
   },
   "history": {
     "title": "History Analysis",
