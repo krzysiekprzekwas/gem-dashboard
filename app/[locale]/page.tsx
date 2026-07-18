@@ -88,13 +88,19 @@ export default function Home() {
     router.replace(pathname, { locale: target });
   };
 
-  // Calculate appropriate limit based on selected range
-  // 3m ~= 63 trading days, 1y ~= 252 trading days
-  const limit = historyRange === "3m" ? 100 : historyRange === "1y" ? 300 : 1000;
-
-  // Use SWR hooks for automatic caching, revalidation, and request deduplication
+  // Use SWR hooks for automatic caching, revalidation, and request deduplication.
+  // Fetch the full history once; the range toggle filters by date client-side so it's
+  // correct regardless of row density (daily vs monthly-seeded strategies like max-gem-eu).
   const { data, isLoading: momentumLoading, error: momentumError } = useMomentumData(strategy);
-  const { data: history, isLoading: historyLoading, error: historyError } = useHistoryData(strategy, limit);
+  const { data: fullHistory, isLoading: historyLoading, error: historyError } = useHistoryData(strategy, 1000);
+
+  // Date cutoff per range (records are date-desc). "max" keeps everything.
+  const history = (() => {
+    if (historyRange === "max") return fullHistory;
+    const cutoff = new Date();
+    cutoff.setMonth(cutoff.getMonth() - (historyRange === "3m" ? 3 : 12));
+    return fullHistory.filter((r) => new Date(r.date) >= cutoff);
+  })();
 
   const loading = momentumLoading || historyLoading;
   const error = momentumError || historyError;
