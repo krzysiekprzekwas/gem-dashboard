@@ -2,5 +2,4 @@ fastapi
 uvicorn
 requests
 sqlmodel
-apscheduler
 psycopg2-binary

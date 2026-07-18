@@ -48,21 +48,6 @@ const fetcher = async (url: string) => {
     return response.json();
 };
 
-export async function fetchMomentumData(region: string = "US"): Promise<MomentumData> {
-    const response = await fetch(`${API_BASE}/momentum?region=${region}`);
-    if (!response.ok) throw new Error("Failed to fetch momentum data");
-    return response.json();
-}
-
-export async function fetchHistory(region: string = "US", limit?: number): Promise<HistoryRecord[]> {
-    const url = limit 
-        ? `${API_BASE}/history?region=${region}&limit=${limit}`
-        : `${API_BASE}/history?region=${region}`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error("Failed to fetch history");
-    return response.json();
-}
-
 // SWR Hooks for automatic caching and revalidation
 export function useMomentumData(region: string) {
     const { data, error, isLoading } = useSWR<MomentumData>(
@@ -119,8 +104,4 @@ export function useAllocationChanges(region: string) {
         isLoading,
         error: error ? "Failed to fetch allocation changes" : null
     };
-}
-
-export async function triggerUpdate(): Promise<void> {
-    await fetch(`${API_BASE}/trigger-update`, { method: 'POST' });
 }
