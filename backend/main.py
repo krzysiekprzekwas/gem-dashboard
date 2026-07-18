@@ -3,7 +3,7 @@ import os
 from fastapi.middleware.cors import CORSMiddleware
 
 try:
-    from .momentum import fetch_momentum_data, REGION_CONFIGS
+    from .momentum import fetch_momentum_data, STRATEGIES
     from .database import (
         create_db_and_tables,
         save_momentum_record,
@@ -11,7 +11,7 @@ try:
         get_latest_signal_change,
     )
 except ImportError:
-    from momentum import fetch_momentum_data, REGION_CONFIGS
+    from momentum import fetch_momentum_data, STRATEGIES
     from database import (
         create_db_and_tables,
         save_momentum_record,
@@ -29,44 +29,43 @@ logger = logging.getLogger(__name__)
 
 def update_momentum_history():
     """
-    Fetch momentum data and save to history for all regions.
+    Fetch momentum data and save to history for every strategy.
     Called by Vercel cron job via /api/cron-update endpoint.
     """
     logger.info(f"=== Cron job started at {datetime.now().isoformat()} ===")
-    regions = ["US", "EU"]
     success_count = 0
 
-    for region in regions:
+    for strategy in STRATEGIES:
         try:
-            logger.info(f"Starting scheduled momentum update for {region}...")
-            data = fetch_momentum_data(region=region)
+            logger.info(f"Starting scheduled momentum update for {strategy}...")
+            data = fetch_momentum_data(strategy=strategy)
 
-            # Extract tickers for the region to mapping to spy_mom, veu_mom etc
-            # This is a bit tricky because the DB schema is fixed with spy_mom, veu_mom
-            # We'll map Eq1 -> spy, Eq2 -> veu, Bond -> bnd, Threshold -> tbill
-            config = REGION_CONFIGS[region]
+            # Ordered assets map to the 4 fixed DB slots (spy/veu/bnd/tbill).
+            # See database.py — the columns are generic slots now, not real tickers.
+            assets = data["assets"]
+            mom = data["momentum"]
 
             record = save_momentum_record(
-                spy=data["momentum"][config["Equity1"]],
-                veu=data["momentum"][config["Equity2"]],
-                bnd=data["momentum"][config["Bond"]],
-                tbill=data["momentum"]["THRESHOLD"],
+                spy=mom[assets[0]],
+                veu=mom[assets[1]],
+                bnd=mom[assets[2]],
+                tbill=mom[assets[3]] if len(assets) > 3 else None,
                 signal=data["signal"],
-                region=region,
+                region=strategy,
             )
             logger.info(
-                f"✓ Successfully saved momentum record for {region}: ID={record.id}, Signal={record.signal}"
+                f"✓ Successfully saved momentum record for {strategy}: ID={record.id}, Signal={record.signal}"
             )
             success_count += 1
         except Exception as e:
             logger.error(
-                f"✗ Failed to update momentum history for {region}: {e}", exc_info=True
+                f"✗ Failed to update momentum history for {strategy}: {e}", exc_info=True
             )
 
     logger.info(
-        f"=== Cron job completed. Success: {success_count}/{len(regions)} regions ==="
+        f"=== Cron job completed. Success: {success_count}/{len(STRATEGIES)} strategies ==="
     )
-    return {"success_count": success_count, "total_regions": len(regions)}
+    return {"success_count": success_count, "total_strategies": len(STRATEGIES)}
 
 
 @asynccontextmanager
@@ -112,42 +111,42 @@ def read_root():
 
 
 @app.get("/api/momentum")
-def get_momentum(region: str = "US"):
+def get_momentum(strategy: str = "gem-us"):
     try:
-        data = fetch_momentum_data(region=region)
+        data = fetch_momentum_data(strategy=strategy)
         return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/history")
-def read_history(region: str = "US", limit: int = 100):
+def read_history(strategy: str = "gem-us", limit: int = 100):
     """
-    Fetch persistent history for a specific region.
+    Fetch persistent history for a specific strategy.
 
     Args:
-        region: Market region (US or EU)
+        strategy: Strategy id (e.g. gem-us, gem-eu, max-gem-eu)
         limit: Maximum number of records to return (default 100)
     """
-    return get_history(region=region, limit=limit)
+    return get_history(region=strategy, limit=limit)
 
 
 @app.get("/api/allocation-changes")
-def get_allocation_changes(region: str = "US"):
+def get_allocation_changes(strategy: str = "gem-us"):
     """
-    Get allocation change analysis for a specific region.
+    Get allocation change analysis for a specific strategy.
 
     Returns information about the most recent signal change,
     independent of any date range filtering.
 
     Args:
-        region: Market region (US or EU)
+        strategy: Strategy id (e.g. gem-us, gem-eu, max-gem-eu)
     """
     try:
-        result = get_latest_signal_change(region=region)
+        result = get_latest_signal_change(region=strategy)
         return result
     except Exception as e:
-        logger.error(f"Error fetching allocation changes for {region}: {e}")
+        logger.error(f"Error fetching allocation changes for {strategy}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -159,7 +158,7 @@ def cron_update(
     """
     Triggered by Vercel Cron Job (weekdays at 12:00 UTC / 13:00 CET).
     Authenticates using CRON_SECRET environment variable.
-    Updates momentum history for all regions (US, EU).
+    Updates momentum history for every strategy in the catalog.
     """
     logger.info(f"Cron endpoint called at {datetime.now().isoformat()}")
 

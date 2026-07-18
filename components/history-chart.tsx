@@ -1,27 +1,36 @@
 "use client";
 
 import { memo, useCallback } from "react";
-import { HistoryRecord } from "@/lib/api";
+import { HistoryRecord, StrategyView, signalColor } from "@/lib/api";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { useTheme } from "next-themes";
 import { useTranslations } from 'next-intl';
 import { useFormattedDate, useFormattedNumber } from "@/lib/i18n-utils";
 
-export const HistoryChart = memo(function HistoryChart({ data, labels }: { data: HistoryRecord[], labels: any }) {
+// History momentum columns are ordered slots (asset[0..3]).
+const SLOT_KEYS = ["spy_mom", "veu_mom", "bnd_mom", "tbill_mom"] as const;
+
+export const HistoryChart = memo(function HistoryChart({ data, view }: { data: HistoryRecord[], view: StrategyView }) {
     const { theme } = useTheme();
     const t = useTranslations('historyTable');
     const formatDate = useFormattedDate();
     const { percent } = useFormattedNumber();
-    
+
+    const n = view.assets.length;
+    // Step-chart height: slot 0 at the top, descending. Signal not in the asset
+    // list (shouldn't happen) falls to 0.
+    const heightOf = (signal: string) => {
+        const i = view.assets.indexOf(signal);
+        return i < 0 ? 0 : n - 1 - i;
+    };
+
     // Data is already filtered by parent; reverse for chronological X axis
     const chartData = [...data]
         .reverse()
         .map(d => ({
             ...d,
             dateStr: formatDate(new Date(d.date)),
-            // Map signals to numeric values for Step Chart: Bond=0, Eq2=1, Eq1=2
-            signalValue: (d.signal === labels.bond_tick || d.signal === 'BND' || d.signal === 'AGGH.AS') ? 0 :
-                (d.signal === labels.eq2_tick || d.signal === 'VEU' || d.signal === 'EXUS.L') ? 1 : 2
+            signalValue: heightOf(d.signal),
         }));
 
     const isDark = theme === "dark";
@@ -34,18 +43,17 @@ export const HistoryChart = memo(function HistoryChart({ data, labels }: { data:
             return (
                 <div className="bg-popover border border-border p-2 rounded shadow-xl text-popover-foreground text-xs">
                     <p className="font-bold mb-1">{label}</p>
-                    <p>{t('signal')}: <span className={(d.signal === labels.eq1_tick || d.signal === 'SPY') ? 'text-green-500' :
-                        (d.signal === labels.eq2_tick || d.signal === 'VEU') ? 'text-blue-500' : 'text-yellow-500'}>
-                        {d.signal}
-                    </span></p>
-                    <p>{labels.eq1_tick}: {percent(d.spy_mom)}</p>
-                    <p>{labels.eq2_tick}: {percent(d.veu_mom)}</p>
-                    {d.tbill_mom !== undefined && <p>{labels.threshold}: {percent(d.tbill_mom)}</p>}
+                    <p>{t('signal')}: <span className={signalColor(view.assets, d.signal)}>{d.signal}</span></p>
+                    {view.assets.map((ticker, i) => {
+                        const val = (d as any)[SLOT_KEYS[i]];
+                        if (val === undefined || val === null) return null;
+                        return <p key={ticker}>{ticker}: {percent(val)}</p>;
+                    })}
                 </div>
             );
         }
         return null;
-    }, [labels, t, percent]);
+    }, [view, t, percent]);
 
     return (
         <div className="h-[300px] w-full">
@@ -65,8 +73,8 @@ export const HistoryChart = memo(function HistoryChart({ data, labels }: { data:
                         fontSize={10}
                         tickLine={false}
                         axisLine={false}
-                        ticks={[0, 1, 2]}
-                        tickFormatter={(val) => val === 0 ? labels.bond_tick : val === 1 ? labels.eq2_tick : labels.eq1_tick}
+                        ticks={view.assets.map((_, i) => i)}
+                        tickFormatter={(val) => view.assets[n - 1 - val] ?? ""}
                     />
                     <Tooltip content={CustomTooltip} />
                     <Line

@@ -3,21 +3,51 @@ from datetime import datetime, timedelta
 import json
 import os
 
-# Assets configuration by region
-REGION_CONFIGS = {
-    "US": {
-        "Equity1": "SPY",
-        "Equity2": "VEU",
-        "Bond": "BND",
-        "Threshold": "^IRX"
+# Built-in strategy catalog. Each entry carries its own securities AND its own
+# selection rule. `assets` is an ordered list (maps to DB slots 0-3). `canonical`
+# strategies also declare `roles`; `argmax` holds every asset as an equal candidate.
+STRATEGIES = {
+    "gem-us": {
+        "name": "Canonical GEM US",
+        "rule": "canonical",
+        "assets": ["SPY", "VEU", "BND", "^IRX"],
+        "roles": {"equity": "SPY", "intl": "VEU", "bond": "BND", "threshold": "^IRX"},
     },
-    "EU": {
-        "Equity1": "CSPX.AS",
-        "Equity2": "EXUS.L",
-        "Bond": "AGGH.AS",
-        "Threshold": "PJEU.DE"
-    }
+    "gem-eu": {
+        "name": "Canonical GEM EU",
+        "rule": "canonical",
+        "assets": ["CSPX.AS", "EXUS.L", "AGGH.AS", "PJEU.DE"],
+        "roles": {"equity": "CSPX.AS", "intl": "EXUS.L", "bond": "AGGH.AS", "threshold": "PJEU.DE"},
+    },
+    "max-gem-eu": {
+        "name": "Max GEM EU",
+        "rule": "argmax",
+        "assets": ["EIMI.L", "CNDX.L", "CBU0.L", "IB01.L"],
+    },
 }
+
+
+def compute_signal(config, momentum):
+    """
+    Pure rule engine: given a strategy config and a {ticker: 12mo-momentum} map,
+    return the ticker to hold. Takes a config object (not an id) so a future
+    user-supplied strategy plugs in here unchanged.
+    """
+    rule = config["rule"]
+
+    if rule == "canonical":
+        # Canonical Antonacci GEM: absolute-momentum gate on the ANCHOR equity only,
+        # then relative momentum between the two equities, else the bond.
+        r = config["roles"]
+        if momentum[r["equity"]] > momentum[r["threshold"]]:
+            return r["equity"] if momentum[r["equity"]] >= momentum[r["intl"]] else r["intl"]
+        return r["bond"]
+
+    if rule == "argmax":
+        # Every asset competes (cash included) — buy the single top performer.
+        return max(config["assets"], key=lambda t: momentum[t])
+
+    raise ValueError(f"Unknown rule: {rule}")
 
 # Simple in-memory cache for ticker data
 # Reduces Yahoo Finance API calls and improves response time
@@ -79,63 +109,74 @@ def fetch_ticker_data(ticker):
         print(f"Error parsing data for {ticker}: {e}")
         return []
 
-def fetch_momentum_data(region="US"):
+def fetch_momentum_data(strategy="gem-us"):
     """
-    Fetches historical data and calculates 12-month momentum for a specific region.
+    Fetches historical data and calculates 12-month momentum for a strategy,
+    then derives the signal via that strategy's rule.
     """
-    if region not in REGION_CONFIGS:
-        region = "US"
-        
-    config = REGION_CONFIGS[region]
-    results = {}
-    current_prices = {}
-    
-    lookback_days = 252 # standard trading year
-    
-    for key, ticker in config.items():
+    if strategy not in STRATEGIES:
+        strategy = "gem-us"
+
+    config = STRATEGIES[strategy]
+    momentum = {}
+    prices = {}
+
+    lookback_days = 252  # standard trading year
+
+    for ticker in config["assets"]:
         data = fetch_ticker_data(ticker)
-        
+
         if not data:
-            results[key] = 0.0
-            current_prices[ticker] = 0.0
+            momentum[ticker] = 0.0
+            prices[ticker] = 0.0
             continue
-            
+
         current = data[-1]['price']
-        current_prices[ticker] = current
-        
+        prices[ticker] = current
+
         # Find price ~252 records ago
         if len(data) > lookback_days:
             past = data[-1 - lookback_days]['price']
         else:
-            past = data[0]['price'] # Fallback
-            
-        if past == 0:
-            results[key] = 0.0
-        else:
-            results[key] = (current / past) - 1.0
+            past = data[0]['price']  # Fallback
 
-    # Get momentum values
-    eq1_mom = results.get('Equity1', 0)
-    eq2_mom = results.get('Equity2', 0)
-    threshold_mom = results.get('Threshold', 0)
-    
-    # Determine Signal
-    signal = config["Bond"]
-    if eq1_mom > threshold_mom or eq2_mom > threshold_mom:
-        if eq1_mom > eq2_mom:
-            signal = config["Equity1"]
-        else:
-            signal = config["Equity2"]
-            
+        momentum[ticker] = 0.0 if past == 0 else (current / past) - 1.0
+
+    signal = compute_signal(config, momentum)
+
     return {
-        "region": region,
+        "strategy": strategy,
+        "name": config["name"],
+        "rule": config["rule"],
+        "assets": config["assets"],
+        "roles": config.get("roles"),
         "signal": signal,
-        "momentum": {
-            config["Equity1"]: eq1_mom,
-            config["Equity2"]: eq2_mom,
-            config["Bond"]: results.get("Bond", 0),
-            "THRESHOLD": threshold_mom  # Generic key for frontend
-        },
-        "prices": current_prices,
+        "momentum": momentum,   # keyed by ticker
+        "prices": prices,
         "last_updated": datetime.now().isoformat()
     }
+
+
+if __name__ == "__main__":
+    # Rule self-check (pure, no network). Proves canonical vs argmax diverge on the
+    # cases that matter, and that canonical gates on the anchor equity only.
+    canon = STRATEGIES["gem-us"]
+    argmax_cfg = {"rule": "argmax", "assets": canon["assets"]}
+
+    # Bonds rip: canonical stays in the anchor equity; argmax buys bonds.
+    m = {"SPY": 0.05, "VEU": 0.03, "BND": 0.09, "^IRX": 0.02}
+    assert compute_signal(canon, m) == "SPY"
+    assert compute_signal(argmax_cfg, m) == "BND"
+
+    # Everything falls: canonical holds the losing bond; argmax parks in cash (^IRX).
+    m = {"SPY": -0.03, "VEU": -0.05, "BND": -0.02, "^IRX": 0.02}
+    assert compute_signal(canon, m) == "BND"
+    assert compute_signal(argmax_cfg, m) == "^IRX"
+
+    # Anchor-only gate: US anchor weak, intl strong -> canonical goes to bonds
+    # (the old "either equity" variant would have picked VEU here).
+    m = {"SPY": -0.01, "VEU": 0.08, "BND": 0.01, "^IRX": 0.02}
+    assert compute_signal(canon, m) == "BND"
+    assert compute_signal(argmax_cfg, m) == "VEU"
+
+    print("momentum rule self-check passed")

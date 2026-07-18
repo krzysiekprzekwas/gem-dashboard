@@ -1,29 +1,48 @@
 import useSWR from 'swr';
 
+export interface StrategyRoles {
+    equity: string;
+    intl: string;
+    bond: string;
+    threshold: string;
+}
+
 export interface MomentumData {
+    strategy: string;
+    name: string;
+    rule: 'canonical' | 'argmax';
+    assets: string[];              // ordered ticker list
+    roles: StrategyRoles | null;   // canonical only
     signal: string;
-    momentum: {
-        SPY: number;
-        VEU: number;
-        BND: number;
-        TBILL: number;
-    };
-    prices: {
-        SPY: number;
-        VEU: number;
-        BND: number;
-    };
+    momentum: Record<string, number>;  // keyed by ticker
+    prices: Record<string, number>;
     last_updated: string;
 }
 
 export interface HistoryRecord {
     id: number;
     date: string;
+    // Generic ordered slots (asset[0..3]) — see backend database.py.
     spy_mom: number;
     veu_mom: number;
     bnd_mom: number;
     tbill_mom?: number;
     signal: string;
+}
+
+// What the history chart/table need to render a strategy generically:
+// ordered assets (slot map) + roles (canonical only).
+export interface StrategyView {
+    rule: 'canonical' | 'argmax';
+    assets: string[];
+    roles: StrategyRoles | null;
+}
+
+// Signal color by slot index — consistent across any strategy's tickers.
+export const SLOT_TEXT_COLORS = ["text-green-500", "text-blue-500", "text-yellow-500", "text-slate-400"];
+export function signalColor(assets: string[], ticker: string): string {
+    const i = assets.indexOf(ticker);
+    return SLOT_TEXT_COLORS[i] ?? SLOT_TEXT_COLORS[SLOT_TEXT_COLORS.length - 1];
 }
 
 export interface AllocationChangesData {
@@ -49,9 +68,9 @@ const fetcher = async (url: string) => {
 };
 
 // SWR Hooks for automatic caching and revalidation
-export function useMomentumData(region: string) {
+export function useMomentumData(strategy: string) {
     const { data, error, isLoading } = useSWR<MomentumData>(
-        `${API_BASE}/momentum?region=${region}`,
+        `${API_BASE}/momentum?strategy=${strategy}`,
         fetcher,
         {
             refreshInterval: 60000, // Auto-refresh every 60 seconds
@@ -67,8 +86,8 @@ export function useMomentumData(region: string) {
     };
 }
 
-export function useHistoryData(region: string, limit: number) {
-    const url = `${API_BASE}/history?region=${region}&limit=${limit}`;
+export function useHistoryData(strategy: string, limit: number) {
+    const url = `${API_BASE}/history?strategy=${strategy}&limit=${limit}`;
     const { data, error, isLoading } = useSWR<HistoryRecord[]>(
         url,
         fetcher,
@@ -86,8 +105,8 @@ export function useHistoryData(region: string, limit: number) {
     };
 }
 
-export function useAllocationChanges(region: string) {
-    const url = `${API_BASE}/allocation-changes?region=${region}`;
+export function useAllocationChanges(strategy: string) {
+    const url = `${API_BASE}/allocation-changes?strategy=${strategy}`;
     const { data, error, isLoading } = useSWR<AllocationChangesData>(
         url,
         fetcher,
@@ -95,7 +114,7 @@ export function useAllocationChanges(region: string) {
             refreshInterval: 60000, // Auto-refresh every 60 seconds
             revalidateOnFocus: false,
             dedupingInterval: 5000,
-            keepPreviousData: true, // Prevent UI blink during region changes
+            keepPreviousData: true, // Prevent UI blink during strategy changes
         }
     );
     

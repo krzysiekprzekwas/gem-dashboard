@@ -1,4 +1,8 @@
 {
+  "meta": {
+    "title": "GEM Dashboard - Global Equity Momentum Strategy Tracker",
+    "description": "Track Global Equity Momentum (GEM) investment signals in real-time. Momentum scores across strategies with historical analysis and allocation insights."
+  },
   "common": {
     "loading": "CONNECTING...",
     "live": "LIVE",
@@ -8,16 +12,14 @@
   },
   "header": {
     "title": "GEM DASHBOARD",
-    "subtitle": "Global Equity Momentum • {region} Strategy"
+    "subtitle": "Global Equity Momentum • {name}"
   },
   "settings": {
     "title": "Settings",
-    "regional": "Regional Settings",
-    "regionalDescription": "Choose your investment region",
+    "strategy": "Strategy",
+    "strategyDescription": "Choose which strategy to track",
     "language": "Language",
-    "languageDescription": "Choose your display language",
-    "unitedStates": "United States",
-    "europe": "Europe (UCITS)"
+    "languageDescription": "Choose your display language"
   },
   "status": {
     "title": "System Status",
@@ -30,16 +32,27 @@
     "yahooFinance": "Yahoo Finance"
   },
   "strategy": {
-    "title": "About the GEM Strategy",
-    "subtitle": "Understanding Global Equity Momentum investing",
-    "whatIsTitle": "What is GEM?",
-    "whatIsDescription": "Global Equity Momentum (GEM) is a systematic investment strategy that rotates between {eq1}, {eq2}, and {bond} based on 12-month momentum. The strategy selects the best-performing equity asset if its momentum exceeds the {threshold}; otherwise, it allocates to bonds for downside protection.",
+    "title": "About the Strategy",
+    "subtitle": "How this strategy allocates each month",
+    "whatIsTitle": "What is it?",
     "howItWorksTitle": "How it Works",
-    "howItWorksStep1": "Calculate 12-month total return for {eq1Tick}, {eq2Tick}, and {threshold}",
-    "howItWorksStep2": "Select the equity asset with higher momentum",
-    "howItWorksStep3": "If selected equity exceeds {threshold} returns, allocate 100% to that equity",
-    "howItWorksStep4": "Otherwise, move to {bond} ({bondTick}) for capital preservation",
-    "howItWorksStep5": "Rebalance monthly based on updated momentum signals",
+    "canonical": {
+      "summary": "Buys the stronger of {equity} and {intl} while {equity} outpaces {threshold}; otherwise holds {bond}.",
+      "whatIsDescription": "Canonical Global Equity Momentum (GEM) anchors on {equity}. Each month it checks whether {equity}'s 12-month return beats {threshold} (the risk-free rate). If it does, it holds whichever of {equity} or {intl} has the stronger 12-month momentum; if not, it moves entirely to {bond} for downside protection.",
+      "step1": "Calculate the 12-month total return for {equity}, {intl}, and {threshold}",
+      "step2": "Absolute gate: is {equity}'s return above {threshold}?",
+      "step3": "If yes, hold the stronger of {equity} vs {intl} (relative momentum)",
+      "step4": "If no, move 100% to {bond} for capital preservation",
+      "step5": "Rebalance monthly based on updated momentum signals"
+    },
+    "argmax": {
+      "summary": "Each month holds whichever of its four assets has the strongest 12-month momentum — cash is one of them, so it parks in cash when markets fall.",
+      "whatIsDescription": "This strategy ranks all four assets — {assets} — by their 12-month return and holds the single top performer. Because short-term bonds (cash) are one of the four, a falling market naturally parks the allocation in cash without any separate rule.",
+      "step1": "Calculate the 12-month total return for all assets: {assets}",
+      "step2": "Rank them by momentum, highest first",
+      "step3": "Hold 100% of the top performer (which can be {cash} when everything else is weak)",
+      "step4": "Rebalance monthly based on updated momentum signals"
+    },
     "externalResourcesTitle": "External Resources",
     "resourceCraftsman": "Global Equity Momentum: A Craftsman's Perspective",
     "resourcePaper": "Research Paper (Antonacci, 2014)",
@@ -49,10 +62,10 @@
     "title": "Current Allocation",
     "targetAllocation": "Target Allocation",
     "strategyRationale": "Strategy Rationale:",
-    "interpretationEq1": "{eq1} ({eq1Mom}) outperform both international stocks ({eq2Mom}) and {threshold} ({thresholdMom}). The strategy allocates 100% to this asset for maximum growth potential.",
-    "interpretationEq2": "{eq2} ({eq2Mom}) demonstrate superior momentum compared to {eq1} ({eq1Mom}) and exceed the {threshold} threshold ({thresholdMom}). The strategy rotates for optimal returns.",
-    "interpretationBondBoth": "Neither {eq1} ({eq1Mom}) nor {eq2} ({eq2Mom}) exceed the {threshold} ({thresholdMom}) threshold. The strategy moves to bonds ({bondMom}) for capital preservation.",
-    "interpretationBondDefensive": "Equity momentum does not sufficiently exceed the risk-free rate. The strategy defensively positions in bonds ({bondMom}) to protect capital."
+    "interpretationEq1": "{eq1} ({eq1Mom}) cleared the {threshold} gate ({thresholdMom}) and outpaced international stocks ({eq2Mom}). The strategy allocates 100% to {eq1}.",
+    "interpretationEq2": "{eq1} ({eq1Mom}) cleared the {threshold} gate ({thresholdMom}), and international stocks ({eq2Mom}) had the stronger momentum. The strategy allocates 100% to {eq2}.",
+    "interpretationBond": "{eq1} ({eq1Mom}) did not beat the {threshold} gate ({thresholdMom}). The strategy moves to bonds ({bondMom}) for capital preservation.",
+    "interpretationArgmax": "{asset} has the highest 12-month momentum ({assetMom}) among the four assets. The strategy allocates 100% to it."
   },
   "momentum": {
     "title": "Momentum Analysis (12-Mo)",
@@ -100,18 +113,18 @@
     "builtBy": "Built by",
     "buyMeCoffee": "Buy me a coffee"
   },
-  "regions": {
-    "US": {
-      "eq1": "US Stocks",
-      "eq2": "Global ex-US",
-      "bond": "Total Bonds",
-      "threshold": "T-Bills"
+  "strategies": {
+    "gem-us": {
+      "name": "Canonical GEM US",
+      "assetNames": ["US Stocks", "Global ex-US", "Total Bonds", "T-Bills"]
     },
-    "EU": {
-      "eq1": "S&P 500",
-      "eq2": "World ex-US",
-      "bond": "Global Bonds",
-      "threshold": "Euro Cash"
+    "gem-eu": {
+      "name": "Canonical GEM EU",
+      "assetNames": ["S&P 500", "World ex-US", "Global Bonds", "Euro Cash"]
+    },
+    "max-gem-eu": {
+      "name": "Max GEM EU",
+      "assetNames": ["Emerging Markets", "Nasdaq 100", "US 7-10Y Bonds", "US 0-1Y (Cash)"]
     }
   }
 }

@@ -6,7 +6,11 @@ from typing import Optional
 class MomentumHistory(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     date: datetime = Field(default_factory=datetime.now)
-    region: str = Field(default="US", index=True)
+    # ponytail: `region` now holds the strategy id (e.g. "gem-us"). Kept the column
+    # name to avoid a prod Postgres migration (no Alembic here).
+    region: str = Field(default="gem-us", index=True)
+    # ponytail: these four are generic ordered slots (asset[0..3]), not real tickers.
+    # 4-slot cap; move to a JSON momentum column if a strategy ever needs 5+ assets.
     spy_mom: float
     veu_mom: float
     bnd_mom: float
