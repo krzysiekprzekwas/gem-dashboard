@@ -425,9 +425,14 @@ export default function Home() {
                 </TableHeader>
                 <TableBody>
                   {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">{t('momentum.loadingMarketData')}</TableCell>
-                    </TableRow>
+                    Array.from({ length: 4 }).map((_, i) => (
+                      <TableRow key={i} className="border-border">
+                        <TableCell><Skeleton className="h-4 w-16 bg-muted" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-40 bg-muted" /></TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-4 w-12 ml-auto bg-muted" /></TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto bg-muted" /></TableCell>
+                      </TableRow>
+                    ))
                   ) : data ? (
                     [...data.assets].sort((a, b) => (data.momentum[b] || 0) - (data.momentum[a] || 0)).map((ticker) => {
                       const isCurrentSignal = ticker === data.signal;

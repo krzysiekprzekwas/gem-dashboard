@@ -73,8 +73,7 @@
     "asset": "Składnik",
     "name": "Nazwa",
     "momentum": "Momentum",
-    "currentPrice": "Aktualna Cena",
-    "loadingMarketData": "Ładowanie danych rynkowych..."
+    "currentPrice": "Aktualna Cena"
   },
   "history": {
     "title": "Analiza Historyczna",
