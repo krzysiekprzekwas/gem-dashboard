@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations } from "next-intl/server";
 import { routing } from "@/i18n/routing";
+import { SITE_URL } from "@/lib/site";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -39,7 +40,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     keywords: ["GEM", "Global Equity Momentum", "investment strategy", "momentum investing", "SPY", "VEU", "BND", "portfolio allocation"],
     authors: [{ name: "Krzysztof Przekwas" }],
     creator: "Krzysztof Przekwas",
-    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://gem-dashboard.vercel.app'),
+    metadataBase: new URL(SITE_URL),
     // hreflang alternates — lets Google index and serve the right language per user.
     alternates: {
       canonical: path,
