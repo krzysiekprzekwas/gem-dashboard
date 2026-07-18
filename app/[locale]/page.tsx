@@ -14,10 +14,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { AllocationChanges } from "@/components/allocation-changes";
 import { HistoryTable } from "@/components/history-table";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { ChevronDown, Settings, Globe } from "lucide-react";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+import { ChevronDown } from "lucide-react";
 import { useTranslations, useLocale } from 'next-intl';
+import { usePathname, useRouter } from "@/i18n/navigation";
+import { routing } from "@/i18n/routing";
 import { useFormattedDate, useFormattedNumber } from "@/lib/i18n-utils";
 
 // Lazy load HistoryChart with Recharts library to reduce initial bundle size
@@ -29,18 +29,38 @@ const HistoryChart = dynamic(
   }
 );
 
-const REGION_LABELS: Record<string, any> = {
-  US: {
-    eq1_tick: "SPY",
-    eq2_tick: "VEU",
-    bond_tick: "BND",
-  },
-  EU: {
-    eq1_tick: "CSPX.AS",
-    eq2_tick: "EXUS.L",
-    bond_tick: "AGGH.AS",
-  }
+// Strategy catalog — mirrors backend/momentum.py STRATEGIES. `assets` is the ordered
+// slot list (slot 0..3 map to the fixed history columns). `roles` is canonical-only.
+type StrategyDef = {
+  rule: "canonical" | "argmax";
+  assets: string[];
+  roles?: { equity: string; intl: string; bond: string; threshold: string };
 };
+
+const STRATEGIES: Record<string, StrategyDef> = {
+  "gem-us": {
+    rule: "canonical",
+    assets: ["SPY", "VEU", "BND", "^IRX"],
+    roles: { equity: "SPY", intl: "VEU", bond: "BND", threshold: "^IRX" },
+  },
+  "gem-eu": {
+    rule: "canonical",
+    assets: ["CSPX.AS", "EXUS.L", "AGGH.AS", "PJEU.DE"],
+    roles: { equity: "CSPX.AS", intl: "EXUS.L", bond: "AGGH.AS", threshold: "PJEU.DE" },
+  },
+  "max-gem-eu": {
+    rule: "argmax",
+    assets: ["EIMI.L", "CNDX.L", "CBU0.L", "IB01.L"],
+  },
+};
+
+// Signal color by slot index — so any strategy's tickers color consistently.
+const SLOT_COLORS = [
+  "bg-green-600 hover:bg-green-700",
+  "bg-blue-600 hover:bg-blue-700",
+  "bg-yellow-600 hover:bg-yellow-700",
+  "bg-slate-500 hover:bg-slate-600",
+];
 
 export default function Home() {
   const t = useTranslations();
@@ -48,109 +68,112 @@ export default function Home() {
   const formatDate = useFormattedDate();
   const { percent, currency } = useFormattedNumber();
 
+  const router = useRouter();
+  const pathname = usePathname();
+
   const [statusOpen, setStatusOpen] = useState(false);
   const [strategyOpen, setStrategyOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
 
-  const [region, setRegion] = useState<string>("US");
-  const [language, setLanguage] = useState<string>(locale);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [strategy, setStrategy] = useState<string>("gem-us");
   const [historyRange, setHistoryRange] = useState<"3m" | "1y" | "max">("1y");
 
   useEffect(() => {
-    const savedRegion = localStorage.getItem("gem-region");
-    if (savedRegion) setRegion(savedRegion);
-
-    const savedLang = localStorage.getItem("gem-language");
-    if (savedLang) setLanguage(savedLang);
+    const savedStrategy = localStorage.getItem("gem-strategy");
+    if (savedStrategy && STRATEGIES[savedStrategy]) setStrategy(savedStrategy);
   }, []);
+
+  // Language is URL-driven now: navigate to the same path under the target locale.
+  const switchLocale = (target: string) => {
+    router.replace(pathname, { locale: target });
+  };
 
   // Calculate appropriate limit based on selected range
   // 3m ~= 63 trading days, 1y ~= 252 trading days
   const limit = historyRange === "3m" ? 100 : historyRange === "1y" ? 300 : 1000;
 
   // Use SWR hooks for automatic caching, revalidation, and request deduplication
-  const { data, isLoading: momentumLoading, error: momentumError } = useMomentumData(region);
-  const { data: history, isLoading: historyLoading, error: historyError } = useHistoryData(region, limit);
+  const { data, isLoading: momentumLoading, error: momentumError } = useMomentumData(strategy);
+  const { data: history, isLoading: historyLoading, error: historyError } = useHistoryData(strategy, limit);
 
   const loading = momentumLoading || historyLoading;
   const error = momentumError || historyError;
 
-  const handleRegionChange = (newRegion: string) => {
-    setRegion(newRegion);
-    localStorage.setItem("gem-region", newRegion);
+  const handleStrategyChange = (newStrategy: string) => {
+    setStrategy(newStrategy);
+    localStorage.setItem("gem-strategy", newStrategy);
   };
 
-  const handleLanguageChange = (newLang: string) => {
-    setLanguage(newLang);
-    localStorage.setItem("gem-language", newLang);
-    document.cookie = `NEXT_LOCALE=${newLang}; path=/; max-age=31536000`;
-    // Refresh to apply new locale
-    window.location.reload();
+  // Current strategy + its display names (parallel to assets order), from i18n.
+  const strat = STRATEGIES[strategy];
+  const strategyName = t(`strategies.${strategy}.name`);
+  const assetNames = t.raw(`strategies.${strategy}.assetNames`) as string[];
+  const assetName = (ticker: string) => assetNames?.[strat.assets.indexOf(ticker)] ?? ticker;
+
+  // Passed to the history chart/table: ordered assets (slot map), roles, rule.
+  const view = {
+    rule: strat.rule,
+    assets: strat.assets,
+    roles: strat.roles ?? null,
   };
 
-  // Get region labels from translations
-  const labels = {
-    eq1: t(`regions.${region}.eq1`),
-    eq2: t(`regions.${region}.eq2`),
-    bond: t(`regions.${region}.bond`),
-    threshold: t(`regions.${region}.threshold`),
-    eq1_tick: REGION_LABELS[region].eq1_tick,
-    eq2_tick: REGION_LABELS[region].eq2_tick,
-    bond_tick: REGION_LABELS[region].bond_tick,
+  // About-card helpers
+  const roleName = strat.roles && {
+    equity: assetName(strat.roles.equity),
+    intl: assetName(strat.roles.intl),
+    bond: assetName(strat.roles.bond),
+    threshold: assetName(strat.roles.threshold),
   };
+  const assetList = strat.assets.map(assetName).join(", ");
+  const cashName = assetName(strat.assets[strat.assets.length - 1]);
+  const strategySummary = strat.rule === "canonical"
+    ? t('strategy.canonical.summary', {
+        equity: roleName!.equity, intl: roleName!.intl,
+        bond: roleName!.bond, threshold: roleName!.threshold,
+      })
+    : t('strategy.argmax.summary');
 
   const getSignalColor = (signal: string) => {
-    if (signal === labels.eq1_tick) return "bg-green-600 hover:bg-green-700";
-    if (signal === labels.eq2_tick) return "bg-blue-600 hover:bg-blue-700";
-    return "bg-yellow-600 hover:bg-yellow-700"; // Bond
+    const i = strat.assets.indexOf(signal);
+    return SLOT_COLORS[i] ?? SLOT_COLORS[SLOT_COLORS.length - 1];
   };
 
-  const getSignalInterpretation = (signal: string, momentum: any) => {
+  const getSignalInterpretation = (signal: string, momentum: Record<string, number> | undefined) => {
     if (!momentum) return "";
 
-    const eq1Mom = percent(momentum[labels.eq1_tick] || 0);
-    const eq2Mom = percent(momentum[labels.eq2_tick] || 0);
-    const bondMom = percent(momentum[labels.bond_tick] || 0);
-    const thresholdMom = percent(momentum.THRESHOLD || 0);
-
-    if (signal === labels.eq1_tick) {
-      return t('allocation.interpretationEq1', {
-        eq1: labels.eq1,
-        eq1Mom,
-        eq2Mom,
-        threshold: labels.threshold,
-        thresholdMom
+    if (strat.rule === "argmax") {
+      return t('allocation.interpretationArgmax', {
+        asset: assetName(signal),
+        assetMom: percent(momentum[signal] || 0),
       });
-    } else if (signal === labels.eq2_tick) {
-      return t('allocation.interpretationEq2', {
-        eq2: labels.eq2,
-        eq2Mom,
-        eq1: labels.eq1,
-        eq1Mom,
-        threshold: labels.threshold,
-        thresholdMom
-      });
-    } else if (signal === labels.bond_tick || signal === "BND" || signal === "AGGH.AS") {
-      const rawEq1Mom = momentum[labels.eq1_tick] || 0;
-      const rawEq2Mom = momentum[labels.eq2_tick] || 0;
-      const rawThresholdMom = momentum.THRESHOLD || 0;
-      
-      if (rawEq1Mom < rawThresholdMom && rawEq2Mom < rawThresholdMom) {
-        return t('allocation.interpretationBondBoth', {
-          eq1: labels.eq1,
-          eq1Mom,
-          eq2: labels.eq2,
-          eq2Mom,
-          threshold: labels.threshold,
-          thresholdMom,
-          bondMom
-        });
-      } else {
-        return t('allocation.interpretationBondDefensive', { bondMom });
-      }
     }
-    return "";
+
+    // canonical: anchor-only absolute gate, then relative between the two equities
+    const r = strat.roles!;
+    const eq1Mom = percent(momentum[r.equity] || 0);
+    const eq2Mom = percent(momentum[r.intl] || 0);
+    const bondMom = percent(momentum[r.bond] || 0);
+    const thresholdMom = percent(momentum[r.threshold] || 0);
+
+    if (signal === r.equity) {
+      return t('allocation.interpretationEq1', {
+        eq1: assetName(r.equity), eq1Mom, eq2Mom,
+        threshold: assetName(r.threshold), thresholdMom,
+      });
+    }
+    if (signal === r.intl) {
+      return t('allocation.interpretationEq2', {
+        eq2: assetName(r.intl), eq2Mom,
+        eq1: assetName(r.equity), eq1Mom,
+        threshold: assetName(r.threshold), thresholdMom,
+      });
+    }
+    // bond: the anchor equity did not clear the T-bill gate
+    return t('allocation.interpretationBond', {
+      eq1: assetName(r.equity), eq1Mom,
+      threshold: assetName(r.threshold), thresholdMom,
+      bondMom,
+    });
   };
 
   return (
@@ -159,73 +182,31 @@ export default function Home() {
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-border pb-4 gap-4 md:gap-0">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tighter text-foreground">{t('header.title')}</h1>
-            <p className="text-xs md:text-sm text-muted-foreground">{t('header.subtitle', { region })}</p>
+            <p className="text-xs md:text-sm text-muted-foreground">{t('header.subtitle', { name: strategyName })}</p>
           </div>
           <div className="flex items-center gap-3 self-end md:self-auto">
             <ThemeToggle />
 
-            <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-              <Button
-                variant="outline"
-                size="icon"
-                className="border-border text-muted-foreground w-8 h-8 rounded-full"
-                onClick={() => setSettingsOpen(true)}
-              >
-                <Settings className="w-4 h-4" />
-              </Button>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>{t('settings.title')}</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-6 py-4">
-                  {/* Region Selection */}
-                  <div>
-                    <h3 className="text-sm font-semibold mb-2">{t('settings.regional')}</h3>
-                    <p className="text-xs text-muted-foreground mb-3">{t('settings.regionalDescription')}</p>
-                    <RadioGroup value={region} onValueChange={handleRegionChange} className="space-y-3">
-                      <div className="flex items-center space-x-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                        <RadioGroupItem value="US" id="us" />
-                        <Label htmlFor="us" className="flex-1 cursor-pointer">
-                          <div className="font-semibold">{t('settings.unitedStates')}</div>
-                          <div className="text-xs text-muted-foreground">SPY, VEU, BND, ^IRX</div>
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                        <RadioGroupItem value="EU" id="eu" />
-                        <Label htmlFor="eu" className="flex-1 cursor-pointer">
-                          <div className="font-semibold">{t('settings.europe')}</div>
-                          <div className="text-xs text-muted-foreground">CSPX, EXUS, AGGH, PJEU</div>
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-
-                  <Separator />
-
-                  {/* Language Selection */}
-                  <div>
-                    <h3 className="text-sm font-semibold mb-2">{t('settings.language')}</h3>
-                    <p className="text-xs text-muted-foreground mb-3">{t('settings.languageDescription')}</p>
-                    <RadioGroup value={language} onValueChange={handleLanguageChange} className="space-y-3">
-                      <div className="flex items-center space-x-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                        <RadioGroupItem value="en" id="lang-en" />
-                        <Label htmlFor="lang-en" className="flex-1 cursor-pointer">
-                          <div className="font-semibold">English</div>
-                          <div className="text-xs text-muted-foreground">International</div>
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                        <RadioGroupItem value="pl" id="lang-pl" />
-                        <Label htmlFor="lang-pl" className="flex-1 cursor-pointer">
-                          <div className="font-semibold">Polski</div>
-                          <div className="text-xs text-muted-foreground">Polska</div>
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+            {/* Inline EN / PL locale toggle — URL-driven (/, /pl). */}
+            <div className="flex items-center gap-1 text-sm font-medium" aria-label={t('settings.language')}>
+              {routing.locales.map((lang, i) => (
+                <span key={lang} className="flex items-center gap-1">
+                  {i > 0 && <span className="text-muted-foreground/50" aria-hidden>/</span>}
+                  <button
+                    type="button"
+                    onClick={() => switchLocale(lang)}
+                    aria-current={locale === lang ? "true" : undefined}
+                    className={`uppercase transition-colors ${
+                      locale === lang
+                        ? "text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {lang}
+                  </button>
+                </span>
+              ))}
+            </div>
 
             <Dialog open={statusOpen} onOpenChange={setStatusOpen}>
               <Badge
@@ -271,6 +252,27 @@ export default function Home() {
           </div>
         </header>
 
+        {/* STRATEGY SELECTOR — segmented pills, same style as the history range toggle.
+            ponytail: fine for a handful; switch to a dropdown if the catalog grows past ~5. */}
+        <div className="flex flex-wrap gap-0.5 rounded-lg border border-border p-0.5 bg-muted/30" role="tablist" aria-label={t('settings.strategy')}>
+          {Object.keys(STRATEGIES).map((id) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={strategy === id}
+              onClick={() => handleStrategyChange(id)}
+              className={`flex-1 min-w-[8rem] px-3 py-2 text-xs font-medium rounded-md transition-colors ${
+                strategy === id
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t(`strategies.${id}.name`)}
+            </button>
+          ))}
+        </div>
+
         {/* GEM STRATEGY INFO SECTION - COLLAPSIBLE */}
         <Collapsible open={strategyOpen} onOpenChange={setStrategyOpen}>
           <Card className="border-border bg-card/50">
@@ -282,7 +284,7 @@ export default function Home() {
                       📚 {t('strategy.title')}
                     </CardTitle>
                     <CardDescription className="text-muted-foreground">
-                      {t('strategy.subtitle')}
+                      {strategySummary}
                     </CardDescription>
                   </div>
                   <ChevronDown
@@ -298,30 +300,36 @@ export default function Home() {
                 <div>
                   <h3 className="font-semibold text-foreground mb-2">{t('strategy.whatIsTitle')}</h3>
                   <p className="text-muted-foreground leading-relaxed">
-                    {t('strategy.whatIsDescription', {
-                      eq1: labels.eq1,
-                      eq2: labels.eq2,
-                      bond: labels.bond,
-                      threshold: labels.threshold
-                    })}
+                    {strat.rule === "canonical"
+                      ? t('strategy.canonical.whatIsDescription', {
+                        equity: roleName!.equity,
+                        intl: roleName!.intl,
+                        bond: roleName!.bond,
+                        threshold: roleName!.threshold,
+                      })
+                      : t('strategy.argmax.whatIsDescription', { assets: assetList })}
                   </p>
                 </div>
 
                 <div>
                   <h3 className="font-semibold text-foreground mb-2">{t('strategy.howItWorksTitle')}</h3>
                   <ul className="list-disc list-inside text-muted-foreground space-y-1 leading-relaxed">
-                    <li>{t('strategy.howItWorksStep1', {
-                      eq1Tick: labels.eq1_tick,
-                      eq2Tick: labels.eq2_tick,
-                      threshold: labels.threshold
-                    })}</li>
-                    <li>{t('strategy.howItWorksStep2')}</li>
-                    <li>{t('strategy.howItWorksStep3', { threshold: labels.threshold })}</li>
-                    <li>{t('strategy.howItWorksStep4', {
-                      bond: labels.bond,
-                      bondTick: labels.bond_tick
-                    })}</li>
-                    <li>{t('strategy.howItWorksStep5')}</li>
+                    {strat.rule === "canonical" ? (
+                      <>
+                        <li>{t('strategy.canonical.step1', { equity: roleName!.equity, intl: roleName!.intl, threshold: roleName!.threshold })}</li>
+                        <li>{t('strategy.canonical.step2', { equity: roleName!.equity, threshold: roleName!.threshold })}</li>
+                        <li>{t('strategy.canonical.step3', { equity: roleName!.equity, intl: roleName!.intl })}</li>
+                        <li>{t('strategy.canonical.step4', { bond: roleName!.bond })}</li>
+                        <li>{t('strategy.canonical.step5')}</li>
+                      </>
+                    ) : (
+                      <>
+                        <li>{t('strategy.argmax.step1', { assets: assetList })}</li>
+                        <li>{t('strategy.argmax.step2')}</li>
+                        <li>{t('strategy.argmax.step3', { cash: cashName })}</li>
+                        <li>{t('strategy.argmax.step4')}</li>
+                      </>
+                    )}
                   </ul>
                 </div>
 
@@ -421,15 +429,12 @@ export default function Home() {
                       <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">{t('momentum.loadingMarketData')}</TableCell>
                     </TableRow>
                   ) : data ? (
-                    [labels.eq1_tick, labels.eq2_tick, labels.bond_tick, "THRESHOLD"].sort((a, b) => {
-                      const aMom = (data.momentum as any)[a] || 0;
-                      const bMom = (data.momentum as any)[b] || 0;
-                      return bMom - aMom;
-                    }).map((ticker) => {
+                    [...data.assets].sort((a, b) => (data.momentum[b] || 0) - (data.momentum[a] || 0)).map((ticker) => {
                       const isCurrentSignal = ticker === data.signal;
-                      const momentum = (data.momentum as any)[ticker] || 0;
-                      const price = (data.prices as any)[ticker] || 0;
-                      const isThreshold = ticker === "THRESHOLD";
+                      const momentum = data.momentum[ticker] || 0;
+                      const price = data.prices[ticker] || 0;
+                      // canonical threshold is a yardstick, not a held asset — hide its price
+                      const isThreshold = view.roles?.threshold === ticker;
 
                       return (
                         <TableRow
@@ -437,7 +442,7 @@ export default function Home() {
                           className={`border-border hover:bg-muted/50 ${isCurrentSignal ? 'bg-accent/30' : ''}`}
                         >
                           <TableCell className="font-medium text-foreground">
-                            {isThreshold ? labels.threshold : ticker}
+                            {ticker}
                             {isCurrentSignal && (
                               <span className="ml-2 text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded">
                                 {t('common.selected')}
@@ -445,10 +450,7 @@ export default function Home() {
                             )}
                           </TableCell>
                           <TableCell className="text-muted-foreground">
-                            {ticker === labels.eq1_tick ? labels.eq1 :
-                              ticker === labels.eq2_tick ? labels.eq2 :
-                                ticker === labels.bond_tick ? labels.bond :
-                                  labels.threshold}
+                            {assetName(ticker)}
                           </TableCell>
                           <TableCell className={`text-right ${momentum > 0 ? "text-green-500" : "text-red-500"}`}>
                             {percent(momentum)}
@@ -469,7 +471,7 @@ export default function Home() {
           <div className="md:col-span-2 pt-8">
             <h2 className="text-2xl font-bold tracking-tighter text-foreground mb-4">{t('history.title')}</h2>
 
-            <AllocationChanges region={region} />
+            <AllocationChanges strategy={strategy} view={view} />
 
             <Card className="bg-card border-border overflow-hidden">
               <CardHeader>
@@ -513,11 +515,11 @@ export default function Home() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                <HistoryChart data={history} labels={labels} />
+                <HistoryChart data={history} view={view} />
 
                 <Collapsible open={historyOpen} onOpenChange={setHistoryOpen}>
                   <CollapsibleContent className="pt-4 border-t border-border">
-                    <HistoryTable data={history} labels={labels} />
+                    <HistoryTable data={history} view={view} />
                   </CollapsibleContent>
                 </Collapsible>
               </CardContent>

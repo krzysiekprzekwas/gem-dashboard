@@ -1,18 +1,21 @@
 "use client";
 
 import { useState, memo } from "react";
-import { HistoryRecord } from "@/lib/api";
+import { HistoryRecord, StrategyView, signalColor } from "@/lib/api";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslations } from 'next-intl';
 import { useFormattedDate, useFormattedNumber } from "@/lib/i18n-utils";
 
-export const HistoryTable = memo(function HistoryTable({ data, labels }: { data: HistoryRecord[], labels: any }) {
+// History momentum columns are ordered slots (asset[0..3]).
+const SLOT_KEYS = ["spy_mom", "veu_mom", "bnd_mom", "tbill_mom"] as const;
+
+export const HistoryTable = memo(function HistoryTable({ data, view }: { data: HistoryRecord[], view: StrategyView }) {
     const t = useTranslations('historyTable');
     const formatDate = useFormattedDate();
     const { percent } = useFormattedNumber();
-    
+
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
@@ -28,10 +31,9 @@ export const HistoryTable = memo(function HistoryTable({ data, labels }: { data:
                     <TableRow className="border-border hover:bg-transparent text-xs">
                         <TableHead className="text-muted-foreground">{t('date')}</TableHead>
                         <TableHead className="text-muted-foreground">{t('signal')}</TableHead>
-                        <TableHead className="text-right text-muted-foreground">{labels.eq1_tick}</TableHead>
-                        <TableHead className="text-right text-muted-foreground">{labels.eq2_tick}</TableHead>
-                        <TableHead className="text-right text-muted-foreground">{labels.threshold}</TableHead>
-                        <TableHead className="text-right text-muted-foreground">{labels.bond_tick}</TableHead>
+                        {view.assets.map((ticker) => (
+                            <TableHead key={ticker} className="text-right text-muted-foreground">{ticker}</TableHead>
+                        ))}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -40,22 +42,22 @@ export const HistoryTable = memo(function HistoryTable({ data, labels }: { data:
                             <TableCell className="text-foreground font-mono">
                                 {formatDate(new Date(record.date))}
                             </TableCell>
-                            <TableCell className={`font-bold ${(record.signal === labels.eq1_tick || record.signal === 'SPY') ? 'text-green-500' :
-                                (record.signal === labels.eq2_tick || record.signal === 'VEU') ? 'text-blue-500' : 'text-yellow-500'
-                                }`}>
+                            <TableCell className={`font-bold ${signalColor(view.assets, record.signal)}`}>
                                 {record.signal}
                             </TableCell>
-                            <TableCell className="text-right text-muted-foreground">{percent(record.spy_mom)}</TableCell>
-                            <TableCell className="text-right text-muted-foreground">{percent(record.veu_mom)}</TableCell>
-                            <TableCell className="text-right text-muted-foreground">
-                                {record.tbill_mom !== undefined ? percent(record.tbill_mom) : "—"}
-                            </TableCell>
-                            <TableCell className="text-right text-muted-foreground">{percent(record.bnd_mom)}</TableCell>
+                            {view.assets.map((ticker, i) => {
+                                const val = (record as any)[SLOT_KEYS[i]];
+                                return (
+                                    <TableCell key={ticker} className="text-right text-muted-foreground">
+                                        {val !== undefined && val !== null ? percent(val) : "—"}
+                                    </TableCell>
+                                );
+                            })}
                         </TableRow>
                     ))}
                     {data.length === 0 && (
                         <TableRow>
-                            <TableCell colSpan={6} className="text-center text-muted-foreground h-24">{t('noHistoryAvailable', { ns: 'history' })}</TableCell>
+                            <TableCell colSpan={2 + view.assets.length} className="text-center text-muted-foreground h-24">{t('noHistoryAvailable', { ns: 'history' })}</TableCell>
                         </TableRow>
                     )}
                 </TableBody>

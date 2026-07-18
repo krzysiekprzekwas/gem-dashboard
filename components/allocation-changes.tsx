@@ -1,18 +1,18 @@
 "use client";
 
 import { memo } from "react";
-import { useAllocationChanges } from "@/lib/api";
+import { useAllocationChanges, StrategyView, signalColor } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ArrowRightIcon, CalendarIcon, ClockIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslations } from 'next-intl';
 import { useFormattedDate } from "@/lib/i18n-utils";
 
-export const AllocationChanges = memo(function AllocationChanges({ region }: { region: string }) {
+export const AllocationChanges = memo(function AllocationChanges({ strategy, view }: { strategy: string, view: StrategyView }) {
     const t = useTranslations('allocationChanges');
     const formatDate = useFormattedDate();
-    
-    const { data, isLoading, error } = useAllocationChanges(region);
+
+    const { data, isLoading, error } = useAllocationChanges(strategy);
     
     // Loading state
     if (isLoading) {
@@ -110,11 +110,11 @@ export const AllocationChanges = memo(function AllocationChanges({ region }: { r
                         <ArrowRightIcon className="w-3 h-3 mr-2" /> {t('latestShift')}
                     </span>
                     <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                        <span className={`font-bold ${previous_signal === 'SPY' ? 'text-green-500' : previous_signal === 'VEU' ? 'text-blue-500' : 'text-yellow-500'}`}>
+                        <span className={`font-bold ${signalColor(view.assets, previous_signal)}`}>
                             {previous_signal}
                         </span>
                         <span className="text-muted-foreground">→</span>
-                        <span className={`font-bold ${current_signal === 'SPY' ? 'text-green-500' : current_signal === 'VEU' ? 'text-blue-500' : 'text-yellow-500'}`}>
+                        <span className={`font-bold ${signalColor(view.assets, current_signal)}`}>
                             {current_signal}
                         </span>
                     </div>

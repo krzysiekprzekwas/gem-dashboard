@@ -1,4 +1,8 @@
 {
+  "meta": {
+    "title": "Panel GEM - Śledzenie strategii Global Equity Momentum",
+    "description": "Śledź sygnały inwestycyjne Global Equity Momentum (GEM) na żywo. Wyniki momentum dla różnych strategii wraz z analizą historyczną i alokacją."
+  },
   "common": {
     "loading": "ŁĄCZENIE...",
     "live": "NA ŻYWO",
@@ -8,16 +12,14 @@
   },
   "header": {
     "title": "PANEL GEM",
-    "subtitle": "Globalny Momentum Akcji • Strategia {region}"
+    "subtitle": "Globalny Momentum Akcji • {name}"
   },
   "settings": {
     "title": "Ustawienia",
-    "regional": "Ustawienia Regionalne",
-    "regionalDescription": "Wybierz swój region inwestycyjny",
+    "strategy": "Strategia",
+    "strategyDescription": "Wybierz strategię do śledzenia",
     "language": "Język",
-    "languageDescription": "Wybierz język wyświetlania",
-    "unitedStates": "Stany Zjednoczone",
-    "europe": "Europa (UCITS)"
+    "languageDescription": "Wybierz język wyświetlania"
   },
   "status": {
     "title": "Status Systemu",
@@ -30,16 +32,27 @@
     "yahooFinance": "Yahoo Finance"
   },
   "strategy": {
-    "title": "O Strategii GEM",
-    "subtitle": "Zrozumienie inwestowania w Globalny Momentum Akcji",
-    "whatIsTitle": "Czym jest GEM?",
-    "whatIsDescription": "Global Equity Momentum (GEM) to systematyczna strategia inwestycyjna, która rotuje między {eq1}, {eq2} i {bond} na podstawie 12-miesięcznego momentum. Strategia wybiera najlepiej działający składnik akcyjny, jeśli jego momentum przekracza {threshold}; w przeciwnym razie alokuje do obligacji dla ochrony kapitału.",
+    "title": "O Strategii",
+    "subtitle": "Jak ta strategia alokuje każdego miesiąca",
+    "whatIsTitle": "Czym jest?",
     "howItWorksTitle": "Jak to Działa",
-    "howItWorksStep1": "Oblicz 12-miesięczny całkowity zwrot dla {eq1Tick}, {eq2Tick} i {threshold}",
-    "howItWorksStep2": "Wybierz składnik akcyjny z wyższym momentum",
-    "howItWorksStep3": "Jeśli wybrany składnik akcyjny przekracza zwroty {threshold}, alokuj 100% do tego składnika",
-    "howItWorksStep4": "W przeciwnym razie przejdź do {bond} ({bondTick}) dla zachowania kapitału",
-    "howItWorksStep5": "Rebalansuj miesięcznie na podstawie zaktualizowanych sygnałów momentum",
+    "canonical": {
+      "summary": "Trzyma mocniejszy z dwóch składników akcyjnych, dopóki składnik bazowy ({equity}) wyprzedza próg ({threshold}); w przeciwnym razie lokuje w obligacjach ({bond}).",
+      "whatIsDescription": "Kanoniczny Global Equity Momentum (GEM) jest zakotwiczony w składniku bazowym ({equity}). Co miesiąc sprawdza, czy jego 12-miesięczny zwrot przewyższa próg ({threshold}) — stopę wolną od ryzyka. Jeśli tak, trzyma mocniejszy z dwóch składników akcyjnych: bazowego ({equity}) lub międzynarodowego ({intl}). Jeśli nie, w całości lokuje w obligacjach ({bond}) dla ochrony kapitału.",
+      "step1": "Oblicz 12-miesięczny zwrot dla trzech składników: {equity}, {intl} i {threshold}",
+      "step2": "Bramka absolutna: czy zwrot składnika bazowego ({equity}) przewyższa próg ({threshold})?",
+      "step3": "Jeśli tak — trzymaj mocniejszy ze składników akcyjnych: bazowy ({equity}) lub międzynarodowy ({intl})",
+      "step4": "Jeśli nie — przenieś 100% do obligacji ({bond}) dla ochrony kapitału",
+      "step5": "Rebalansuj co miesiąc na podstawie zaktualizowanych sygnałów momentum"
+    },
+    "argmax": {
+      "summary": "Co miesiąc trzyma ten z czterech składników, który ma najsilniejsze 12-miesięczne momentum. Gotówka jest jednym z nich, więc w czasie spadków strategia po prostu ląduje w gotówce.",
+      "whatIsDescription": "Ta strategia co miesiąc szereguje cztery składniki ({assets}) według 12-miesięcznego zwrotu i trzyma tylko najlepszy z nich. Ponieważ jednym z nich jest gotówka (obligacje krótkoterminowe), w słabym okresie strategia naturalnie ląduje w gotówce — bez żadnej dodatkowej reguły.",
+      "step1": "Oblicz 12-miesięczny zwrot dla wszystkich składników: {assets}",
+      "step2": "Uszereguj je według momentum, od najwyższego",
+      "step3": "Trzymaj w 100% najlepszy składnik — w słabym okresie może to być gotówka ({cash})",
+      "step4": "Rebalansuj co miesiąc na podstawie zaktualizowanych sygnałów momentum"
+    },
     "externalResourcesTitle": "Zasoby Zewnętrzne",
     "resourceCraftsman": "Global Equity Momentum: Perspektywa Rzemieślnika",
     "resourcePaper": "Artykuł Badawczy (Antonacci, 2014)",
@@ -49,10 +62,10 @@
     "title": "Bieżąca Alokacja",
     "targetAllocation": "Docelowa Alokacja",
     "strategyRationale": "Uzasadnienie Strategii:",
-    "interpretationEq1": "{eq1} ({eq1Mom}) przewyższają zarówno akcje międzynarodowe ({eq2Mom}), jak i {threshold} ({thresholdMom}). Strategia alokuje 100% do tego składnika dla maksymalnego potencjału wzrostu.",
-    "interpretationEq2": "{eq2} ({eq2Mom}) wykazują lepsze momentum w porównaniu do {eq1} ({eq1Mom}) i przekraczają próg {threshold} ({thresholdMom}). Strategia rotuje dla optymalnych zwrotów.",
-    "interpretationBondBoth": "Ani {eq1} ({eq1Mom}), ani {eq2} ({eq2Mom}) nie przekraczają progu {threshold} ({thresholdMom}). Strategia przechodzi do obligacji ({bondMom}) dla zachowania kapitału.",
-    "interpretationBondDefensive": "Momentum akcji nie przekracza wystarczająco stopy wolnej od ryzyka. Strategia defensywnie pozycjonuje się w obligacjach ({bondMom}) aby chronić kapitał."
+    "interpretationEq1": "Składnik bazowy — {eq1} ({eq1Mom}) — pokonał próg ({threshold}: {thresholdMom}) i wyprzedził akcje międzynarodowe ({eq2Mom}). Strategia lokuje 100% w tym składniku.",
+    "interpretationEq2": "Składnik bazowy — {eq1} ({eq1Mom}) — pokonał próg ({threshold}: {thresholdMom}), ale mocniejsze momentum miał składnik międzynarodowy — {eq2} ({eq2Mom}). Strategia lokuje w nim 100%.",
+    "interpretationBond": "Składnik bazowy — {eq1} ({eq1Mom}) — nie pokonał progu ({threshold}: {thresholdMom}). Strategia przenosi kapitał do obligacji ({bondMom}) dla ochrony kapitału.",
+    "interpretationArgmax": "Najsilniejsze 12-miesięczne momentum spośród czterech składników: {asset} ({assetMom}). Strategia lokuje w nim 100%."
   },
   "momentum": {
     "title": "Analiza Momentum (12 mies.)",
@@ -100,18 +113,18 @@
     "builtBy": "Zbudowane przez",
     "buyMeCoffee": "Postaw mi kawę"
   },
-  "regions": {
-    "US": {
-      "eq1": "Akcje USA",
-      "eq2": "Globalne bez USA",
-      "bond": "Obligacje Ogółem",
-      "threshold": "Bony Skarbowe"
+  "strategies": {
+    "gem-us": {
+      "name": "Kanoniczny GEM US",
+      "assetNames": ["Akcje USA", "Globalne bez USA", "Obligacje Ogółem", "Bony Skarbowe"]
     },
-    "EU": {
-      "eq1": "S&P 500",
-      "eq2": "Światowe bez USA",
-      "bond": "Obligacje Globalne",
-      "threshold": "Gotówka Euro"
+    "gem-eu": {
+      "name": "Kanoniczny GEM EU",
+      "assetNames": ["S&P 500", "Światowe bez USA", "Obligacje Globalne", "Gotówka Euro"]
+    },
+    "max-gem-eu": {
+      "name": "Max GEM EU",
+      "assetNames": ["Rynki Wschodzące", "Nasdaq 100", "Obligacje USA 7-10L", "USA 0-1L (Gotówka)"]
     }
   }
 }
