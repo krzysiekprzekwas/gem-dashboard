@@ -108,6 +108,14 @@
     "previousPage": "Poprzednia strona",
     "nextPage": "Następna strona"
   },
+  "note": {
+    "greeting": "Cześć 👋 Jestem Krzysztof. Zrobiłem ten dashboard, bo inwestując według Global Equity Momentum, męczyło mnie ręczne przeliczanie sygnału co miesiąc.",
+    "para2": "Trackery, które znajdowałem, albo były za paywallem, albo chowały samą regułę pod wykresami, których nie potrzebowałem. Chciałem jednej strony, którą otwieram, sprawdzam alokację na ten miesiąc i zamykam. Więc ją zbudowałem.",
+    "para3": "Mam nadzieję, że dzięki temu ta strategia będzie i dla Ciebie trochę mniej zagadką.",
+    "disclaimer": "Nic z tego nie jest poradą inwestycyjną — to prywatne narzędzie do śledzenia publicznej strategii opartej na regułach. Rób własny research i pamiętaj, że dotychczasowe momentum niczego nie gwarantuje na przyszłość.",
+    "ps": "(PS resztę moich rzeczy znajdziesz na <site>kristof.pro</site>, a od czasu do czasu notkę na <substack>Substack</substack>.)",
+    "signature": "Krzysztof Przekwas"
+  },
   "footer": {
     "builtBy": "Zbudowane przez",
     "buyMeCoffee": "Postaw mi kawę"

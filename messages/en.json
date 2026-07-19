@@ -108,6 +108,14 @@
     "previousPage": "Previous page",
     "nextPage": "Next page"
   },
+  "note": {
+    "greeting": "Hey 👋 I'm Krzysztof, and I built this dashboard because I run a slice of my own savings on Global Equity Momentum and got tired of recomputing the signal by hand every month.",
+    "para2": "The trackers I found either sat behind a paywall or buried the actual rule under charts I didn't need. I just wanted one page I could open, see this month's allocation, and close. So I built it.",
+    "para3": "My hope is that it makes the strategy a little less of a black box for you too.",
+    "disclaimer": "None of this is investment advice — it's a personal tool for tracking a public, rules-based strategy. Do your own research, and remember that past momentum guarantees nothing about the future.",
+    "ps": "(PS you can find the rest of my work at <site>kristof.pro</site>, or the occasional note on <substack>Substack</substack>.)",
+    "signature": "Krzysztof Przekwas"
+  },
   "footer": {
     "builtBy": "Built by",
     "buyMeCoffee": "Buy me a coffee"

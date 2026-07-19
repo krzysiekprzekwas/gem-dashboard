@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import { useMomentumData, useHistoryData, MomentumData, HistoryRecord } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -538,6 +539,38 @@ export default function Home() {
           </div>
 
         </main>
+
+        {/* FOUNDER NOTE — personal intro + not-investment-advice disclaimer */}
+        <Card className="border-border bg-card/50">
+          <CardContent className="flex flex-col md:flex-row-reverse items-center md:items-start gap-6 md:gap-10">
+            <Image
+              src="/creator.jpg"
+              alt="Krzysztof Przekwas"
+              width={140}
+              height={140}
+              className="rounded-full object-cover grayscale shrink-0 w-28 h-28 md:w-36 md:h-36"
+            />
+            <div className="space-y-4 text-sm md:text-base leading-relaxed text-muted-foreground">
+              <p>{t('note.greeting')}</p>
+              <p>{t('note.para2')}</p>
+              <p>{t('note.para3')}</p>
+              <p className="text-foreground">{t('note.disclaimer')}</p>
+              <p className="text-muted-foreground/80">
+                {t.rich('note.ps', {
+                  site: (chunks) => (
+                    <a href="https://www.kristof.pro" target="_blank" rel="noopener noreferrer"
+                      className="text-blue-500 hover:text-blue-400 underline underline-offset-4">{chunks}</a>
+                  ),
+                  substack: (chunks) => (
+                    <a href="https://krzysztofprzekwas.substack.com" target="_blank" rel="noopener noreferrer"
+                      className="text-blue-500 hover:text-blue-400 underline underline-offset-4">{chunks}</a>
+                  ),
+                })}
+              </p>
+              <p className="font-serif text-xl md:text-2xl text-foreground pt-2">{t('note.signature')}</p>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* FOOTER */}
         <footer className="border-t border-border pt-8 mt-12">
